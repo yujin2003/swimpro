@@ -18,19 +18,28 @@ router.get("/categories", async (req, res) => {
     }
 });
 
-// ★★★ 2. 제품 목록 조회 API - 이 부분을 추가합니다 ★★★
-// (카테고리별 필터링 기능 포함: 예: GET /api/products?categoryId=1)
+// 2. 제품 목록 조회 API (최종 수정본)
 router.get("/products", async (req, res) => {
     try {
-        const { categoryId } = req.query; // URL의 쿼리 파라미터에서 categoryId를 가져옵니다.
+        const { categoryId } = req.query;
         
-        let query = "SELECT * FROM products";
+        // 프론트가 필요한 모든 컬럼을 (AS)로 별명까지 맞춰서 조회합니다.
+        let query = `
+            SELECT 
+                product_id AS id, 
+                name, image, shortDescription, description, 
+                pros, cons, badge, ratings AS rating, reviews, 
+                purchase_url AS link, category_id
+            FROM products
+        `;
         const params = [];
 
         if (categoryId) {
             query += " WHERE category_id = $1";
             params.push(categoryId);
         }
+
+        query += " ORDER BY product_id ASC"; // ID 순으로 정렬
 
         const allProducts = await pool.query(query, params);
         res.json(allProducts.rows);
@@ -41,11 +50,23 @@ router.get("/products", async (req, res) => {
     }
 });
 
-// ★★★ 3. 특정 제품 상세 정보 조회 API - 이 부분을 추가합니다 ★★★
+// 3. 특정 제품 상세 정보 조회 API (최종 수정본)
 router.get("/products/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await pool.query("SELECT * FROM products WHERE product_id = $1", [id]);
+        
+        // (★ 여기가 수정되었습니다!)
+        // 목록 API와 똑같이, 프론트가 필요한 모든 컬럼/별명을 조회합니다.
+        const product = await pool.query(
+            `SELECT 
+                product_id AS id, 
+                name, image, shortDescription, description, 
+                pros, cons, badge, ratings AS rating, reviews, 
+                purchase_url AS link, category_id
+             FROM products 
+             WHERE product_id = $1`,
+            [id]
+        );
 
         if (product.rows.length === 0) {
             return res.status(404).json({ message: "제품을 찾을 수 없습니다." });
