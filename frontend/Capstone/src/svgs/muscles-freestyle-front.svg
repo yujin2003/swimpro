@@ -1,0 +1,15 @@
+<svg viewBox="0 0 280 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 자유형 전면 근육 - 빨간색 강조 -->
+  <!-- 어깨 (shoulders) -->
+  <ellipse id="shoulders_l" cx="70" cy="125" rx="20" ry="15" fill="#ef4444" opacity="0.8" />
+  <ellipse id="shoulders_r" cx="210" cy="125" rx="20" ry="15" fill="#ef4444" opacity="0.8" />
+  <!-- 코어 (core) -->
+  <path id="core" d="M120 200 C120 195, 130 190, 140 190 C150 190, 160 195, 160 200 L160 270 C160 280, 150 290, 140 290 C130 290, 120 280, 120 270 Z" fill="#ef4444" opacity="0.8" />
+  <!-- 대퇴사두근 (quads) -->
+  <path id="quads_l" d="M90 300 C85 320, 85 380, 90 400 C95 420, 105 430, 115 425 L115 300 Z" fill="#ef4444" opacity="0.8" />
+  <path id="quads_r" d="M190 300 C195 320, 195 380, 190 400 C185 420, 175 430, 165 425 L165 300 Z" fill="#ef4444" opacity="0.8" />
+  <!-- 종아리 (calves) -->
+  <path id="calves_l" d="M90 470 C85 490, 85 520, 90 540 C95 550, 105 555, 115 550 L115 470 Z" fill="#ef4444" opacity="0.8" />
+  <path id="calves_r" d="M190 470 C195 490, 195 520, 190 540 C185 550, 175 555, 165 550 L165 470 Z" fill="#ef4444" opacity="0.8" />
+</svg>
+

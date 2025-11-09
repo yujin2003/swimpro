@@ -1,0 +1,18 @@
+<svg viewBox="0 0 280 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 접영 후면 근육 - 빨간색 강조 -->
+  <!-- 삼각근 (delts) -->
+  <ellipse id="delts_l" cx="70" cy="125" rx="18" ry="12" fill="#ef4444" opacity="0.8" />
+  <ellipse id="delts_r" cx="210" cy="125" rx="18" ry="12" fill="#ef4444" opacity="0.8" />
+  <!-- 광배근 (lats) -->
+  <path id="lats_l" d="M85 130 C80 150, 80 180, 85 210 C90 230, 100 240, 110 235 L110 130 Z" fill="#ef4444" opacity="0.8" />
+  <path id="lats_r" d="M195 130 C200 150, 200 180, 195 210 C190 230, 180 240, 170 235 L170 130 Z" fill="#ef4444" opacity="0.8" />
+  <!-- 승모근 (traps) -->
+  <path id="traps" d="M100 100 C100 95, 120 90, 140 90 C160 90, 180 95, 180 100 L180 130 C180 140, 170 150, 140 150 C110 150, 100 140, 100 130 Z" fill="#ef4444" opacity="0.8" />
+  <!-- 둔근 (glutes) -->
+  <ellipse id="glutes_l" cx="115" cy="300" rx="20" ry="15" fill="#ef4444" opacity="0.8" />
+  <ellipse id="glutes_r" cx="165" cy="300" rx="20" ry="15" fill="#ef4444" opacity="0.8" />
+  <!-- 햄스트링 (hams) -->
+  <path id="hams_l" d="M90 300 C85 320, 85 380, 90 400 C95 420, 105 430, 115 425 L115 300 Z" fill="#ef4444" opacity="0.8" />
+  <path id="hams_r" d="M190 300 C195 320, 195 380, 190 400 C185 420, 175 430, 165 425 L165 300 Z" fill="#ef4444" opacity="0.8" />
+</svg>
+
