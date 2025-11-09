@@ -25,7 +25,20 @@ import mainRoutes from "./routes/main.js";
 //dotenv.config(); 최상단으로 올려둠 gpt api 떄문에..
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  'https://swimpro-byqtfzte9-hhj03s-projects.vercel.app', // Vercel 배포 주소
+  'http://localhost:5173' // 프론트 로컬 테스트 주소
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS에 의해 허용되지 않는 요청입니다.'));
+    }
+  }
+}));
 app.use(express.json());
 
 // --- 라우트 연결 ---
