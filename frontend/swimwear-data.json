@@ -1,0 +1,230 @@
+[
+  {
+    "id": 1,
+    "category": "women",
+    "name": "원피스형 (One-piece)",
+    "name_en": "One-piece",
+    "description": "가장 일반적이고 실내 수영장 기본 복장",
+    "features": "어깨 끈이 고정되어 움직임이 안정적, 초보자에게 추천",
+    "pros": [
+      "안정적인 움직임으로 초보자에게 적합",
+      "실내 수영장에서 가장 일반적으로 사용",
+      "체형 보완 효과가 좋음"
+    ],
+    "cons": [
+      "디자인 선택의 폭이 제한적일 수 있음",
+      "일부 사용자는 착용감이 불편할 수 있음"
+    ],
+    "recommended": [
+      "수영 초보자",
+      "실내 수영장 이용자",
+      "안정적인 움직임을 원하는 분"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/women-swimwear.jpg"
+  },
+  {
+    "id": 2,
+    "category": "women",
+    "name": "세미 오픈백 (Semi Open-back)",
+    "name_en": "Semi Open-back",
+    "description": "등 부분이 부분적으로 트여 있는 형태",
+    "features": "디자인이 다양하고 착용감이 편안함",
+    "pros": [
+      "다양한 디자인 선택 가능",
+      "착용감이 편안하고 자유로움",
+      "어깨 움직임에 제약이 적음"
+    ],
+    "cons": [
+      "일부 사용자는 어깨 끈이 불편할 수 있음",
+      "초보자는 착용이 어려울 수 있음"
+    ],
+    "recommended": [
+      "디자인을 중시하는 분",
+      "편안한 착용감을 원하는 분",
+      "중급 이상 수영자"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/women-swimwear.jpg"
+  },
+  {
+    "id": 3,
+    "category": "women",
+    "name": "오픈백 / 크로스백 (Open-back / Cross-back)",
+    "name_en": "Open-back / Cross-back",
+    "description": "등 부분이 크게 트여있거나 X자형 스트랩",
+    "features": "어깨 움직임이 자유로워 훈련용으로 적합",
+    "pros": [
+      "어깨 움직임이 매우 자유로움",
+      "훈련용으로 최적화된 디자인",
+      "속도 향상에 도움"
+    ],
+    "cons": [
+      "초보자는 착용이 어려울 수 있음",
+      "어깨 끈이 미끄러질 수 있음"
+    ],
+    "recommended": [
+      "경기 준비 수영자",
+      "훈련용 수영복을 찾는 분",
+      "고급 수영자"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/women-swimwear.jpg"
+  },
+  {
+    "id": 4,
+    "category": "women",
+    "name": "하이컷형 (High-cut)",
+    "name_en": "High-cut",
+    "description": "허벅지 절개선이 높은 디자인",
+    "features": "다리 움직임이 편하고 속도 향상에 도움",
+    "pros": [
+      "다리 움직임이 매우 편함",
+      "수저항 감소로 속도 향상",
+      "경기용으로 적합"
+    ],
+    "cons": [
+      "일부 사용자는 노출이 많다고 느낄 수 있음",
+      "초보자에게는 부담스러울 수 있음"
+    ],
+    "recommended": [
+      "경기 수영자",
+      "속도 향상을 원하는 분",
+      "고급 수영자"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/women-swimwear.jpg"
+  },
+  {
+    "id": 5,
+    "category": "women",
+    "name": "래시가드 + 레깅스형",
+    "name_en": "Rashguard + Leggings",
+    "description": "상·하의 분리형으로 피부 보호 중심",
+    "features": "자외선 차단, 체형 보완에 좋음 (초보자나 여성 선호 많음)",
+    "pros": [
+      "자외선 차단 효과 우수",
+      "체형 보완에 도움",
+      "초보자에게 친화적",
+      "상하의 분리로 선택의 폭이 넓음"
+    ],
+    "cons": [
+      "수저항이 다소 증가할 수 있음",
+      "경기용으로는 부적합"
+    ],
+    "recommended": [
+      "초보자",
+      "자외선 차단이 필요한 분",
+      "체형 보완을 원하는 분",
+      "레저 수영을 즐기는 분"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/women-swimwear.jpg"
+  },
+  {
+    "id": 6,
+    "category": "men",
+    "name": "삼각형 (Briefs)",
+    "name_en": "Briefs",
+    "description": "전통적인 수영복 형태",
+    "features": "저항이 적고 경기용으로 많이 사용됨",
+    "pros": [
+      "수저항이 가장 적음",
+      "경기용으로 최적화",
+      "전통적인 디자인으로 널리 사용"
+    ],
+    "cons": [
+      "일부 사용자는 노출이 많다고 느낄 수 있음",
+      "초보자에게는 부담스러울 수 있음"
+    ],
+    "recommended": [
+      "경기 수영자",
+      "속도 향상을 원하는 분",
+      "전문 수영 선수"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/men-swimwear.jpg"
+  },
+  {
+    "id": 7,
+    "category": "men",
+    "name": "사각형 (Trunks / Square-cut)",
+    "name_en": "Trunks / Square-cut",
+    "description": "짧은 반바지 형태",
+    "features": "실내 수영장 일반용으로 가장 흔함",
+    "pros": [
+      "실내 수영장에서 가장 일반적",
+      "착용감이 편안함",
+      "초보자에게 적합",
+      "다양한 디자인 선택 가능"
+    ],
+    "cons": [
+      "수저항이 삼각형보다 다소 높음",
+      "경기용으로는 부적합"
+    ],
+    "recommended": [
+      "수영 초보자",
+      "실내 수영장 이용자",
+      "일반 수영 애호가"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/men-swimwear.jpg"
+  },
+  {
+    "id": 8,
+    "category": "men",
+    "name": "반신형 (Jammer)",
+    "name_en": "Jammer",
+    "description": "허벅지 중간까지 오는 압박형",
+    "features": "경기용 또는 훈련용, 근육 지지와 수저항 감소 효과",
+    "pros": [
+      "근육 지지 효과 우수",
+      "수저항 감소로 속도 향상",
+      "경기용 및 훈련용으로 적합",
+      "압박 효과로 피로 감소"
+    ],
+    "cons": [
+      "초보자에게는 다소 불편할 수 있음",
+      "가격이 상대적으로 높을 수 있음"
+    ],
+    "recommended": [
+      "경기 준비 수영자",
+      "훈련용 수영복을 찾는 분",
+      "근육 지지가 필요한 분"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/men-swimwear.jpg"
+  },
+  {
+    "id": 9,
+    "category": "men",
+    "name": "래시가드 + 숏팬츠형",
+    "name_en": "Rashguard + Shorts",
+    "description": "상체 보호와 편안함 중심",
+    "features": "초보자나 체형 보완 목적, 실내보다는 레저용에 가까움",
+    "pros": [
+      "자외선 차단 효과 우수",
+      "체형 보완에 도움",
+      "초보자에게 친화적",
+      "상하의 분리로 선택의 폭이 넓음"
+    ],
+    "cons": [
+      "수저항이 다소 증가할 수 있음",
+      "경기용으로는 부적합",
+      "실내 수영장에서는 덜 사용됨"
+    ],
+    "recommended": [
+      "초보자",
+      "자외선 차단이 필요한 분",
+      "체형 보완을 원하는 분",
+      "레저 수영을 즐기는 분"
+    ],
+    "link": "https://www.arena.co.kr/product/list.html?cate_no=239",
+    "image": "/men-swimwear.jpg"
+  }
+]
+
+
+
+
+
