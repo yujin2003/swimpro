@@ -4,10 +4,9 @@
 const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
 
-// API 기본 URL 설정 (고정)
 export const API_CONFIG = {
-  // ngrok 서버 사용 (외부 접근 가능)
-  BASE_URL: 'https://yasuko-bulletless-trudi.ngrok-free.dev',
+  // Vercel 환경 변수(VITE_API_URL)를 읽어옵니다.
+  BASE_URL: import.meta.env.VITE_API_URL, 
   // BASE_URL: 'http://localhost:3001', // 로컬 백엔드 서버 (개발용)
   
   // API 엔드포인트
