@@ -1,16 +1,36 @@
-// db.js
+// backend/db.js
 
-// 이전 방식 대신, 'pg' 패키지에서 'Pool' 클래스만
-// "이름으로" 직접 가져옵니다. (Named Import)
 import { Pool } from "pg";
+import dotenv from "dotenv";
 
-const pool = new Pool({
-    user: "postgres",
-    host: "localhost",
-    database: "postgres", // (본인 DB 이름 확인)
-    password: "123456", // (본인 DB 비밀번호 확인)
-    port: 5432,
-    client_encoding: 'UTF8',
-});
+// .env 파일 로딩 (server.js가 아니라 여기서도 해주는 게 안전함)
+dotenv.config();
+
+let pool;
+
+if (process.env.DATABASE_URL) {
+  // --- 1. 배포 환경 (Render) ---
+  // Render가 제공하는 DATABASE_URL을 사용합니다.
+  console.log("Connecting to Render DB via DATABASE_URL...");
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    // Render DB는 SSL(보안 연결)이 필요할 수 있습니다.
+    ssl: {
+      rejectUnauthorized: false 
+    }
+  });
+} else {
+  // --- 2. 로컬 개발 환경 ---
+  // 로컬 .env 파일의 개별 변수를 사용합니다.
+  console.log("Connecting to Local DB...");
+  pool = new Pool({
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'postgres',
+    password: process.env.DB_PASSWORD || '123456',
+    port: process.env.DB_PORT || 5432,
+    client_encoding: 'UTF8'
+  });
+}
 
 export default pool;
