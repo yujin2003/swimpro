@@ -6,8 +6,10 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// 1. 전체 카테고리 목록 조회 API
+// 1. 전체 카테고리 목록 조회
 // GET /api/categories
+
+// 1. 전체 카테고리 목록 조회 API (기존과 동일)
 router.get("/categories", async (req, res) => {
     try {
         const allCategories = await pool.query("SELECT * FROM categories ORDER BY category_id ASC");
@@ -18,18 +20,18 @@ router.get("/categories", async (req, res) => {
     }
 });
 
-// 2. 제품 목록 조회 API (최종 수정본)
+// ★★★ 2. 제품 목록 조회 API (image 필드 다시 추가) ★★★
 router.get("/products", async (req, res) => {
     try {
         const { categoryId } = req.query;
         
-        // 프론트가 필요한 모든 컬럼을 (AS)로 별명까지 맞춰서 조회합니다.
+        // (★ 수정된 부분) image 컬럼 SELECT에 다시 추가
         let query = `
             SELECT 
                 product_id AS id, 
-                name, image, shortDescription, description, 
-                pros, cons, badge, ratings AS rating, reviews, 
-                purchase_url AS link, category_id
+                name, description, purchase_url AS link, 
+                shortDescription, pros, cons, category_id,
+                image 
             FROM products
         `;
         const params = [];
@@ -39,7 +41,7 @@ router.get("/products", async (req, res) => {
             params.push(categoryId);
         }
 
-        query += " ORDER BY product_id ASC"; // ID 순으로 정렬
+        query += " ORDER BY product_id ASC";
 
         const allProducts = await pool.query(query, params);
         res.json(allProducts.rows);
@@ -50,19 +52,18 @@ router.get("/products", async (req, res) => {
     }
 });
 
-// 3. 특정 제품 상세 정보 조회 API (최종 수정본)
+// ★★★ 3. 특정 제품 상세 정보 조회 API (image 필드 다시 추가) ★★★
 router.get("/products/:id", async (req, res) => {
     try {
         const { id } = req.params;
         
-        // (★ 여기가 수정되었습니다!)
-        // 목록 API와 똑같이, 프론트가 필요한 모든 컬럼/별명을 조회합니다.
+        // (★ 수정된 부분) image 컬럼 SELECT에 다시 추가
         const product = await pool.query(
             `SELECT 
                 product_id AS id, 
-                name, image, shortDescription, description, 
-                pros, cons, badge, ratings AS rating, reviews, 
-                purchase_url AS link, category_id
+                name, description, purchase_url AS link, 
+                shortDescription, pros, cons, category_id,
+                image
              FROM products 
              WHERE product_id = $1`,
             [id]

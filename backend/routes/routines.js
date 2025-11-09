@@ -1,110 +1,85 @@
 // routes/routines.js
 
 import express from "express";
-import authMiddleware from "../middleware/auth.js"; // ★★★ 인증 미들웨어(경비원)를 가져옵니다.
+import authMiddleware from "../middleware/auth.js";
 import pool from "../db.js";
 
 const router = express.Router();
 
 // POST /api/routines/recommend
-// ★★★ authMiddleware를 추가해서, 이제 이 API는 인증된 사용자만 접근할 수 있습니다.
+// authMiddleware 추가, 인증된 사용자만 접근
 router.post("/recommend", authMiddleware, async (req, res) => {
     try {
-        console.log("프론트에서 받은 Body:", req.body);
-        // 1. 프론트엔드에서 모든 입력값을 받습니다.
+        // 1. 프론트에서 모든 입력값을 받습니다.
         const { height, age, weight, gender, skill, pool: poolValue } = req.body;
         const userId = req.user.userId;
 
-        // ★★★ 2. 받은 값을 백엔드가 이해할 수 있도록 변환합니다. ★★★
+        // 2. 받은 값을 DB에서 검색할 수 있도록 변환합니다.
         let swimAbility;
-        if (skill === 'beginner') {
-            swimAbility = '초급';
-        } else if (skill === 'intermediate') {
-            swimAbility = '중급';
-        } else if (skill === 'advanced') {
-            swimAbility = '고급';
-        } else {
-            swimAbility = '중급'; // 혹시 모를 기본값
-        }
+        if (skill === 'beginner') swimAbility = '초급';
+        else if (skill === 'intermediate') swimAbility = '중급';
+        else if (skill === 'advanced') swimAbility = '고급';
+        else swimAbility = '중급';
 
-        // "25m" 같은 문자열에서 숫자 25만 추출합니다.
         const poolLength = parseInt(poolValue, 10);
+        const userAge = parseInt(age, 10);
+        const userGender = gender || '모두';
+        const userHeight = parseInt(height, 10);
+        const userWeight = parseInt(weight, 10);
 
-        let routineTitle = "";
-        let routineDescription = "";
-        let routineSteps = [];
+        // 3. (★ 핵심 변경) 사용자의 모든 신체 조건을 반영하여 DB에서 루틴을 검색합니다.
+        const routineTemplateResult = await pool.query(
+            `SELECT title, description, steps 
+             FROM routine_templates 
+             WHERE swim_ability = $1 
+               AND pool_length = $2
+               AND $3 >= min_age AND $3 <= max_age
+               AND (gender = $4 OR gender = '모두')
+               AND $5 >= min_height AND $5 <= max_height
+               AND $6 >= min_weight AND $6 <= max_weight
+             ORDER BY RANDOM() 
+             LIMIT 1`,
+            [swimAbility, poolLength, userAge, userGender, userHeight, userWeight]
+        );
 
-        // 2. 수영 실력(swimAbility)을 기준으로 크게 분기합니다.
-        if (swimAbility === '초급') {
-            routineTitle = `초급 ${poolLength}m 풀 적응 루틴`;
-            routineDescription = "물과 친해지고 기본 자세와 호흡을 연습하는 데 집중합니다.";
-            routineSteps = [
-                "워밍업: 천천히 걷기 100m",
-                "발차기 연습 (킥판 잡고) 25m x 4세트",
-                "자유형 팔 동작 연습 25m x 4세트",
-                "쿨다운: 배영으로 천천히 50m"
-            ];
-        
-        } else if (swimAbility === '중급') {
-            // 사용자가 보내준 이미지의 예시 케이스 (160cm, 20세, 여, 25m)
-            if (height <= 160 && age <= 20 && gender === "여" && poolLength == 25) {
-                routineTitle = "자유형 50m - 1분 안에 완주하기 도전!";
-                routineDescription = "체력과 기술을 균형있게 향상시키는 루틴입니다.";
-                routineSteps = [
-                    "워밍업: 자유형 300m",
-                    "기술 연습: 각 영법별 150m씩",
-                    "인터벌: 고강도 400m",
-                    "쿨다운: 완만한 자유형 200m"
-                ];
-            } else if (poolLength == 50) {
-                // 그 외 중급, 50m 풀
-                routineTitle = `중급 50m 풀 지구력 강화 루틴`;
-                routineDescription = "휴식 시간을 줄이며 지구력을 기르는 데 집중합니다.";
-                routineSteps = [
-                    "워밍업: 자유형 200m",
-                    "IM(접-배-평-자) 100m x 2세트",
-                    "자유형 50m x 8세트 (30초 휴식)",
-                    "쿨다운: 100m"
-                ];
+        let routineTitle, routineDescription, routineSteps;
+
+        if (routineTemplateResult.rows.length > 0) {
+            // 4-A. DB에서 조건에 100% 맞는 템플릿을 찾은 경우
+            const template = routineTemplateResult.rows[0];
+            routineTitle = template.title;
+            routineDescription = template.description;
+            routineSteps = template.steps;
+        } else {
+            // 4-B. (1차 폴백) 조건에 100% 맞는 템플릿이 없는 경우 (예: 키/몸무게 제외)
+            //      -> '능력'과 '풀 길이'만으로 다시 검색
+            const fallbackResult = await pool.query(
+                `SELECT title, description, steps 
+                 FROM routine_templates 
+                 WHERE swim_ability = $1 AND pool_length = $2 
+                 ORDER BY RANDOM() LIMIT 1`,
+                 [swimAbility, poolLength]
+            );
+            
+            if (fallbackResult.rows.length > 0) {
+                const template = fallbackResult.rows[0];
+                routineTitle = template.title;
+                routineDescription = template.description;
+                routineSteps = template.steps;
             } else {
-                // 그 외 중급, 25m 풀
-                routineTitle = `중급 25m 풀 스피드 향상 루틴`;
-                routineDescription = "짧은 거리를 빠르게 반복하여 스피드를 올립니다.";
-                routineSteps = [
-                    "워밍업: 200m",
-                    "드릴 연습 (한팔 자유형 등) 100m",
-                    "대시(Dash) 25m x 8세트 (40초 휴식)",
-                    "쿨다운: 100m"
-                ];
+                // 4-C. (최종 폴백) 정말 아무것도 없을 때
+                routineTitle = "기본 루틴";
+                routineDescription = "기본 루틴입니다.";
+                routineSteps = ["자유형 100m"];
             }
-
-        } else if (swimAbility === '고급') {
-            routineTitle = `고급 ${poolLength}m 풀 대회 준비 루틴`;
-            routineDescription = "실전 감각을 익히고 최대 스피드를 유지하는 훈련입니다.";
-            routineSteps = [
-                "워밍업: 400m",
-                "주요 영법 드릴 200m",
-                "인터벌 트레이닝 100m x 8세트 (휴식 1분)",
-                "스프린트 50m x 4세트 (전력 질주)",
-                "쿨다운: 200m"
-            ];
         }
-
-        // 3. (로직 추가 예시) 나이나 몸무게에 따라 강도 조절 (선택 사항)
-        if (age > 50 || weight > 90) {
-            routineTitle = "[강도 조절] " + routineTitle;
-            // (여기서 세트 수를 줄이거나 휴식 시간을 늘리는 등 로직을 추가할 수 있습니다)
-        }
-
-        // 4. 생성된 루틴을 DB에 저장합니다. (description 컬럼 포함)
+        
+        // 5. (기존 로직) 찾은 루틴을 'routines' 테이블에 저장
         const newRoutine = await pool.query(
             "INSERT INTO routines (user_id, title, steps, description) VALUES ($1, $2, $3, $4) RETURNING *",
             [userId, routineTitle, routineSteps, routineDescription]
         );
-
-        console.log("✅ 프론트로 최종 응답 데이터:", newRoutine.rows[0]);
         
-        // 5. DB에 저장된 결과를 사용자에게 응답으로 보냅니다.
         res.status(201).json(newRoutine.rows[0]);
 
     } catch (err) {

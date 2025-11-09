@@ -3,8 +3,7 @@
 import express from "express";
 const router = express.Router();
 
-// 1. 메인 페이지 정보 API
-// GET /api/main
+// 1. 메인 페이지 정보 GET /api/main
 router.get("/main", (req, res) => {
     try {
         const mainData = {
@@ -19,8 +18,8 @@ router.get("/main", (req, res) => {
     }
 });
 
-// 2. 폼/필터 옵션 제공 API (예: 게시판 카테고리, 지역)
-// GET /api/options/category  또는 /api/options/region
+// 2. 폼/필터 옵션 제공 API (게시판 카테고리, 지역)
+// GET /api/options/category 
 router.get("/options/:type", (req, res) => {
     try {
         const { type } = req.params;
@@ -41,21 +40,6 @@ router.get("/options/:type", (req, res) => {
         }
 
         res.json(optionsData);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("서버 에러");
-    }
-});
-
-// ★★★ 3. 메인 소개 문구 및 배경 이미지 API - 이 부분을 추가합니다 ★★★
-// (명세서: GET /api/main/image)
-router.get("/main/image", (req, res) => {
-    try {
-        const imageData = {
-            backgroundImageUrl: "https://example.com/images/main_bg.jpg",
-            introText: "수영 실력을 높이세요!"
-        };
-        res.json(imageData);
     } catch (err) {
         console.error(err.message);
         res.status(500).send("서버 에러");

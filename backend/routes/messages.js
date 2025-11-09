@@ -7,7 +7,7 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// 2. 내가 받은 쪽지함 조회 API (GET /api/messages/inbox)
+// 1. 내가 받은 쪽지함 조회 (GET /api/messages/inbox)
 router.get("/inbox", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -22,7 +22,7 @@ router.get("/inbox", authMiddleware, async (req, res) => {
     }
 });
 
-// ★★★ 3. 특정 사용자와의 1:1 대화 내역 조회 API ★★★
+// 2. 특정 사용자와의 1:1 대화 내역 조회
 router.get("/with/:otherUserId", authMiddleware, async (req, res) => {
     try {
         const myUserId = req.user.userId;
@@ -44,12 +44,12 @@ router.get("/with/:otherUserId", authMiddleware, async (req, res) => {
     }
 });
 
-// ★★★ 4. 나와 대화한 모든 사용자 목록 조회 API ★★★
+// 3. 나와 대화한 모든 사용자 목록 조회
 router.get("/conversations", authMiddleware, async (req, res) => {
     try {
         const myUserId = req.user.userId;
 
-        // 내가 쪽지를 보냈거나, 나에게 쪽지를 보낸 모든 상대방의 ID와 이름을 중복 없이 가져옵니다.
+        // 내가 쪽지를 보냈거나 나에게 쪽지를 보낸 모든 상대방의 ID와 이름을 중복 없이 가져옴.
         const conversations = await pool.query(
             `SELECT DISTINCT u.user_id, u.username
              FROM users u

@@ -1,12 +1,12 @@
-// server.js (★ 최종 통합본 ★)
+// server.js
 import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
 import cors from "cors";
 import pool from "./db.js";
-import http from "http"; // ★ 1. http 다시 가져오기
-import { WebSocketServer } from "ws"; // ★ 2. ws 다시 가져오기
+import http from "http";
+import { WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 
 // --- 라우트 파일 import ---
@@ -19,7 +19,7 @@ import quizRoutes from "./routes/quiz.js";
 import logRoutes from "./routes/logs.js";
 import productRoutes from "./routes/products.js";
 import validateRoutes from "./routes/validate.js";
-import messageRoutes from "./routes/messages.js"; // 1:1 쪽지 (DM) 기능
+import messageRoutes from "./routes/messages.js";
 import mainRoutes from "./routes/main.js";
 
 //dotenv.config(); 최상단으로 올려둠 gpt api 떄문에..
@@ -38,17 +38,15 @@ app.use("/api/quiz", quizRoutes);
 app.use("/api/logs", logRoutes);
 app.use("/api", productRoutes);
 app.use("/api/validate", validateRoutes);
-app.use("/api/messages", messageRoutes); // GET API들 (대화 목록/내역)
+app.use("/api/messages", messageRoutes);
 app.use("/api", mainRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-// ★ 3. HTTP 서버 생성 및 WebSocket 서버 연결
+//HTTP 서버, WebSocket 서버 연결
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// ★ 4. (중요) 현재 접속 중인 사용자를 관리하는 Map
-// (key: user_id, value: WebSocket 연결 객체)
 const userConnections = new Map();
 
 wss.on("connection", (ws) => {
@@ -58,7 +56,7 @@ wss.on("connection", (ws) => {
         try {
             const data = JSON.parse(message);
 
-            // 1. [인증] 클라이언트가 처음 접속 시 토큰을 보냄
+            // 1. [인증] 클라이언트가 처음 접속 시 토큰
             if (data.type === 'auth') {
                 jwt.verify(data.token, process.env.JWT_SECRET, (err, decoded) => {
                     if (err) return ws.send(JSON.stringify({ error: "유효하지 않은 토큰입니다." }));
@@ -72,7 +70,7 @@ wss.on("connection", (ws) => {
 
             // 2. [1:1 DM 전송] 클라이언트가 1:1 메시지를 보냄
             } else if (data.type === 'dm') {
-                console.log("DM 요청 수신:", data); // ★ 1. 요청 데이터 확인
+                console.log("DM 요청 수신:", data); // 요청 데이터 확인
                 if (!ws.userId) {
                     console.error("인증되지 않은 사용자가 DM 시도");
                     return ws.send(JSON.stringify({ error: "인증이 필요합니다." }));
@@ -81,20 +79,20 @@ wss.on("connection", (ws) => {
                 const senderId = ws.userId;
                 const { receiverId, content } = data;
 
-                // ★ 2. DB로 보낼 값 확인
+                // DB로 보낼 값 확인
                 console.log(`DB 저장 시도: senderId=${senderId}, receiverId=${receiverId}, content=${content}`);
 
-                // 2-1. (필수) 메시지를 DB에 저장 (히스토리용)
+                // 2-1 메시지 DB에 저장 (히스토리용)
                 const newDM = await pool.query(
                     "INSERT INTO direct_messages (sender_id, receiver_id, content) VALUES ($1, $2, $3) RETURNING *",
                     [senderId, receiverId, content]
                 );
                 
-                console.log("DB 저장 성공:", newDM.rows[0]); // ★ 3. DB 결과 확인
+                console.log("DB 저장 성공:", newDM.rows[0]);
 
                 const messageToSend = newDM.rows[0];
 
-                // 2-2. (실시간) 받는 사람(receiver)이 현재 접속 중인지 확인
+                // 2-2. (실시간) 받는 사람이 현재 접속 중인지
                 if (userConnections.has(receiverId)) {
                     const receiverWs = userConnections.get(receiverId);
                     // 받는 사람에게 새 메시지 실시간 전송
