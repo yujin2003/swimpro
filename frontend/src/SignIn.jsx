@@ -49,26 +49,49 @@ export default function SignIn() {
         throw new Error('로그인 응답이 올바르지 않습니다.');
       }
       
-      // 로그인 성공 시 사용자 컨텍스트에 저장
-      const userData = response.user || {
-        id: '1',
-        username: form.id.split('@')[0], // 이메일에서 사용자명 추출
+      // 백엔드 응답에서 사용자 정보 추출 (우선순위: response.user > 기본값)
+      const userId = response.userId || response.user?.user_id || response.user?.id || response.user?.userId;
+      const username = response.user?.username;
+      const email = response.user?.email || form.id;
+      
+      // 사용자 정보 구성 (백엔드 응답 우선, 없으면 기본값)
+      const userData = response.user ? {
+        id: userId,
+        userId: userId,
+        user_id: userId,
+        username: username,
+        email: email,
+        name: username ? `${username}(사용자)` : `${email.split('@')[0]}(사용자)`,
+        avatar: '🧑🏻‍🎨'
+      } : {
+        // 백엔드 응답에 user가 없는 경우 (하위 호환성)
+        id: userId || '1',
+        userId: userId || '1',
+        user_id: userId || '1',
+        username: form.id.split('@')[0],
         email: form.id,
         name: `${form.id.split('@')[0]}(사용자)`,
         avatar: '🧑🏻‍🎨'
       };
       
-      // 백엔드 응답에서 userId 추출 (response.userId 또는 response.user.id)
-      const userId = response.userId || response.user?.id || response.user?.userId || userData.id;
       if (userId) {
         console.log('✅ 로그인 응답에서 userId 추출:', userId);
+        console.log('✅ 사용자 정보:', {
+          userId,
+          username: userData.username,
+          email: userData.email,
+          name: userData.name
+        });
+      } else {
+        console.warn('⚠️ userId를 찾을 수 없습니다. 기본값 사용:', userData);
       }
       
-      // userData에 userId 명시적으로 포함
+      // userData에 userId 명시적으로 포함 (이미 포함되어 있지만 확실히)
       const userDataWithUserId = {
         ...userData,
         id: userId || userData.id,
-        userId: userId || userData.id
+        userId: userId || userData.userId,
+        user_id: userId || userData.user_id
       };
       
       login(userDataWithUserId, response.token);

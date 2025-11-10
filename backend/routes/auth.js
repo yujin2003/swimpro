@@ -57,8 +57,21 @@ router.post("/login", async (req, res) => {
             { expiresIn: "1h" }               // 토큰 유효기간 (예: 1시간)
         );
 
-        // 7. 생성된 토큰을 사용자에게 보냅니다.
-        res.json({ token });
+        // 7. 생성된 토큰과 사용자 정보를 함께 보냅니다.
+        const userInfo = {
+            user_id: user.rows[0].user_id,
+            id: user.rows[0].user_id,  // 호환성을 위해 id도 포함
+            userId: user.rows[0].user_id,  // 호환성을 위해 userId도 포함
+            username: user.rows[0].username,
+            email: user.rows[0].email,
+            name: user.rows[0].username || user.rows[0].email.split('@')[0]  // username이 없으면 이메일에서 추출
+        };
+
+        res.json({ 
+            token,
+            user: userInfo,
+            userId: user.rows[0].user_id  // 호환성을 위해 최상위 레벨에도 포함
+        });
 
     } catch (err) {
         console.error("로그인 중 에러 발생:", err.message);
