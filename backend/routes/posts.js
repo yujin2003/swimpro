@@ -121,8 +121,10 @@ router.get("/", async (req, res) => {
             queryParams.push(location);
         }
         if (search) {
-            whereClauses.push(`title LIKE $${paramIndex++}`);
+            // 제목과 내용 모두에서 검색
+            whereClauses.push(`(title LIKE $${paramIndex} OR content LIKE $${paramIndex})`);
             queryParams.push(`%${search}%`);
+            paramIndex++;
         }
 
         if (whereClauses.length > 0) {

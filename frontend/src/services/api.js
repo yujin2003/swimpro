@@ -169,8 +169,11 @@ async function apiRequest(endpoint, options = {}) {
 
 // 게시글 관련 API
 export const postsAPI = {
-  // 모든 게시글 조회
-  getAllPosts: () => apiRequest('/api/posts'),
+  // 모든 게시글 조회 (검색어 옵션)
+  getAllPosts: (search = '') => {
+    const url = search ? `/api/posts?search=${encodeURIComponent(search)}` : '/api/posts';
+    return apiRequest(url);
+  },
   
   // 특정 게시글 조회
   getPost: (id) => apiRequest(`/api/posts/${id}`),

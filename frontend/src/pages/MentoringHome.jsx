@@ -8,6 +8,7 @@ import { postsAPI } from "../services/api.js";
 export default function MentoringHome() {
   const { posts, loading, error, loadPosts } = usePosts();
   const [q, setQ] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // 실제 검색에 사용할 검색어 (debounce)
   const [bestPosts, setBestPosts] = useState([]);
   const [bestPostsLoading, setBestPostsLoading] = useState(false);
   const [recommendedPosts, setRecommendedPosts] = useState([]);
@@ -15,6 +16,7 @@ export default function MentoringHome() {
   const bestPostsLoadedRef = useRef(false); // 추천 게시글 로드 여부 추적 (무한 루프 방지)
   const wasRefreshingRef = useRef(false); // refresh 상태 추적 (refresh 완료 후 추천 게시글 다시 로드용)
   const location = useLocation();
+  const searchTimeoutRef = useRef(null); // debounce를 위한 timeout ref
 
   // 컴포넌트 마운트 및 경로 변경 시 로그
   useEffect(() => {
@@ -26,6 +28,35 @@ export default function MentoringHome() {
     });
   }, [location.pathname, location.search, location.state, posts.length]);
 
+  // 검색어 변경 시 debounce 적용하여 API 호출
+  useEffect(() => {
+    // 이전 timeout 취소
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // 검색어가 비어있으면 즉시 전체 게시글 로드
+    if (q.trim() === '') {
+      setSearchQuery('');
+      loadPosts('');
+      return;
+    }
+
+    // debounce: 500ms 후에 검색 실행
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log('🔍 검색어 변경 감지, API 호출:', q);
+      setSearchQuery(q.trim());
+      loadPosts(q.trim());
+    }, 500);
+
+    // cleanup 함수
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [q, loadPosts]);
+
   // 수정/삭제/생성 후 돌아왔을 때 강제 새로고침
   useEffect(() => {
     if (location.state?.refresh) {
@@ -36,7 +67,8 @@ export default function MentoringHome() {
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       // 약간의 지연을 두어 state 제거 후 로드 (레이아웃 시프트 최소화)
       const timer = setTimeout(async () => {
-        await loadPosts();
+        // 현재 검색어를 유지하여 새로고침
+        await loadPosts(searchQuery);
         // 로드 완료 후 refresh 상태 해제 (약간의 지연 후)
         setTimeout(() => {
           wasRefreshingRef.current = true; // refresh 완료 표시
@@ -46,7 +78,7 @@ export default function MentoringHome() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [location.state?.refresh, loadPosts]);
+  }, [location.state?.refresh, loadPosts, searchQuery]);
 
   // 게시판1 페이지 로드 시 sessionStorage에서 newPostId 확인 및 추천 게시글 요청
   useEffect(() => {
@@ -261,13 +293,9 @@ export default function MentoringHome() {
     () =>
       posts
         .filter((p) => {
-          // 검색어 필터
-          return q === "" || 
-            p.title.toLowerCase().includes(q.toLowerCase()) ||
-            p.body.toLowerCase().includes(q.toLowerCase()) ||
-            (p.region || p.placeText || "").toLowerCase().includes(q.toLowerCase()) ||
-            p.dateText.toLowerCase().includes(q.toLowerCase()) ||
-            (p.stroke && p.stroke.toLowerCase().includes(q.toLowerCase()));
+          // 서버에서 이미 검색 필터링이 완료되었으므로 클라이언트 사이드 필터링은 제거
+          // 검색어가 비어있으면 모든 게시글 표시
+          return true;
         })
         .sort((a, b) => {
           // PostForm에서 작성된 게시글을 최신순으로 정렬

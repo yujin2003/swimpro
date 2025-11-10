@@ -26,12 +26,13 @@ export function PostsProvider({ children }) {
   const getPostId = (p) => (p?.post_id ?? p?.id);
 
   // API에서 게시글 목록 로드 (useCallback으로 안정적인 참조 유지)
-  const loadPosts = useCallback(async () => {
+  const loadPosts = useCallback(async (search = '') => {
     setLoading(true);
     setError(null);
     try {
-      const apiPosts = await postsAPI.getAllPosts();
+      const apiPosts = await postsAPI.getAllPosts(search);
       console.log('📋 API에서 받은 게시글들:', apiPosts);
+      console.log('📋 검색어:', search || '없음');
       console.log('📋 첫 번째 게시글 ID:', apiPosts[0]?.id, '타입:', typeof apiPosts[0]?.id);
       // 한 번에 업데이트하여 리렌더링 최소화
       setPosts(apiPosts);
