@@ -192,21 +192,42 @@ export default function PostDetail() {
         
       } catch (err) {
         console.error('❌ 게시글 로드 실패:', err);
-        
-        // API 실패 시 로컬 posts에서 찾기 (폴백)
-        // numericId가 정의되지 않았을 수 있으므로 다시 계산
-        const numericIdForFallback = id ? parseInt(id, 10) : null;
-        const localPost = posts.find((p) => {
-          const postId = p.post_id || p.id;
-          if (!postId) return false;
-          const postIdStr = postId.toString();
-          return postIdStr === id || (numericIdForFallback && !isNaN(numericIdForFallback) && postIdStr === numericIdForFallback.toString());
+        console.error('❌ 에러 상세:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack,
+          toString: err.toString()
         });
-        if (localPost) {
-          console.log('📱 로컬 데이터로 폴백:', localPost);
-          setPost(localPost);
+        
+        // 404 오류인지 확인 (여러 방법으로 체크)
+        const errorMessage = err.message || err.toString() || '';
+        const isNotFound = errorMessage.includes('404') || 
+                          errorMessage.includes('찾을 수 없습니다') ||
+                          errorMessage.includes('NOT_FOUND') ||
+                          errorMessage.includes('요청한 리소스를 찾을 수 없습니다') ||
+                          (err.response?.status === 404) ||
+                          (err.status === 404);
+        
+        if (isNotFound) {
+          // 404 오류: 존재하지 않는 게시글
+          console.log('❌ 404 오류 감지: 존재하지 않는 게시글 ID:', id);
+          setError('존재하지 않는 게시글입니다.');
         } else {
-          setError('게시글을 불러올 수 없습니다.');
+          // API 실패 시 로컬 posts에서 찾기 (폴백)
+          // numericId가 정의되지 않았을 수 있으므로 다시 계산
+          const numericIdForFallback = id ? parseInt(id, 10) : null;
+          const localPost = posts.find((p) => {
+            const postId = p.post_id || p.id;
+            if (!postId) return false;
+            const postIdStr = postId.toString();
+            return postIdStr === id || (numericIdForFallback && !isNaN(numericIdForFallback) && postIdStr === numericIdForFallback.toString());
+          });
+          if (localPost) {
+            console.log('📱 로컬 데이터로 폴백:', localPost);
+            setPost(localPost);
+          } else {
+            setError('게시글을 불러올 수 없습니다.');
+          }
         }
       } finally {
         setLoading(false);
