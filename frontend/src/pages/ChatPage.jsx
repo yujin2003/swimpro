@@ -1165,6 +1165,7 @@ export default function ChatPage() {
       // WebSocket 서버로 메시지 전송
       const messageData = {
         type: 'dm',
+        senderId: latestCurrentUserId, // ⚠️ senderId 추가 (백엔드가 필요로 할 수 있음)
         receiverId: numericUserId,
         content: text.trim()
       };
@@ -1172,7 +1173,7 @@ export default function ChatPage() {
       console.log('📤 WebSocket으로 메시지 전송:', {
         messageData,
         receiverId: numericUserId,
-        senderId: latestCurrentUserId, // ⚠️ 최신 currentUserId 사용
+        senderId: latestCurrentUserId,
         tempMessageId: tempMessageId
       });
       
@@ -1180,6 +1181,21 @@ export default function ChatPage() {
       wsRef.current.send(messageJson);
       
       console.log('✅ WebSocket 메시지 전송 완료, 서버 응답 대기 중...');
+      
+      // REST API로도 메시지 저장 (백업 및 동기화)
+      // WebSocket이 실패하거나 백엔드가 REST API를 선호하는 경우를 대비
+      messagesAPI.saveDMMessage({
+        sender_id: latestCurrentUserId,
+        receiver_id: numericUserId,
+        content: text.trim()
+      })
+      .then(() => {
+        console.log('✅ REST API로 메시지 저장 완료');
+      })
+      .catch((saveError) => {
+        // REST API 저장 실패는 경고만 (WebSocket으로 이미 전송했으므로)
+        console.warn('⚠️ REST API 메시지 저장 실패 (WebSocket은 전송됨):', saveError.message);
+      });
     } catch (err) {
       console.error('메시지 전송 실패:', err);
       setError(handleAPIError(err));

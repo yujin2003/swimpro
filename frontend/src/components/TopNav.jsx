@@ -10,8 +10,8 @@ export default function TopNav() {
   const [isEtcOpen, setIsEtcOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // 메인 페이지(/)와 멘토링 페이지(/mentoring)가 아닐 때 검은색 메뉴
-  const isWhiteMenu = location.pathname === '/' || location.pathname === '/mentoring';
+  // 메인 페이지(/), 멘토링 페이지(/mentoring), 쪽지 페이지(/chat)가 아닐 때 검은색 메뉴
+  const isWhiteMenu = location.pathname === '/' || location.pathname === '/mentoring' || location.pathname === '/chat';
   const menuTextColor = isWhiteMenu ? 'text-white' : 'text-black';
   const menuTextShadow = isWhiteMenu ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none';
 
