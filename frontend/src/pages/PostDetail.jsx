@@ -20,86 +20,123 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // 현재 사용자가 게시글 작성자인지 확인
+  // 현재 사용자가 게시글 작성자인지 확인 (더 견고한 로직)
   const isAuthor = useMemo(() => {
     if (!post) {
       console.log('🔍 작성자 확인: post가 없음');
       return false;
     }
     
-    // 게시글 작성자 ID 추출 (여러 필드명 지원)
-    const postUserId = post.user_id || post.userId || post.author_id || post.authorId;
+    // 게시글 작성자 ID 추출 (모든 가능한 필드명 확인)
+    const postUserId = post.user_id || post.userId || post.author_id || post.authorId || 
+                       post['user_id'] || post['userId'];
     
     // 게시글 작성자 username 추출
-    let postUsername = post.username || post.author;
+    let postUsername = post.username || post.author || post['username'] || post['author'];
     // 괄호가 있으면 제거 (예: 'hhj03(사용자)' -> 'hhj03')
     if (postUsername) {
-      postUsername = postUsername.split('(')[0].trim();
+      postUsername = String(postUsername).split('(')[0].trim();
     }
     
-    // 현재 로그인한 사용자 ID 추출 (여러 소스 확인)
-    const currentUserId = user?.id || user?.userId || user?.user_id;
-    
-    // 현재 로그인한 사용자 username 추출
-    // user.name이 'hhj03(사용자)' 형식일 수 있으므로 username 우선 사용
-    let currentUsername = user?.username;
-    // username이 없으면 name에서 괄호 앞 부분만 추출
-    if (!currentUsername && user?.name) {
-      currentUsername = user.name.split('(')[0].trim();
-    }
+    // 현재 로그인한 사용자 ID 추출 (모든 가능한 소스 확인)
+    const userObjId = user?.id || user?.userId || user?.user_id || 
+                      user?.['id'] || user?.['userId'] || user?.['user_id'];
     
     // sessionStorage/localStorage에서도 userId 확인
-    const storedUserId = sessionStorage.getItem(AUTH_CONFIG.USER_ID_KEY) || 
-                        localStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+    const sessionUserId = sessionStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+    const localUserId = localStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+    const storedUserId = sessionUserId || localUserId;
     
-    // 최종 현재 사용자 ID 결정 (우선순위: user 객체 > sessionStorage > localStorage)
-    const finalCurrentUserId = currentUserId || storedUserId;
+    // JWT 토큰에서도 userId 추출 시도 (fallback)
+    let tokenUserId = null;
+    try {
+      const token = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY) || 
+                   localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+      if (token) {
+        // JWT 토큰 파싱 (간단한 방법)
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        tokenUserId = payload.userId || payload.id || payload.user_id;
+      }
+    } catch (e) {
+      // 토큰 파싱 실패 시 무시
+    }
     
-    // 문자열로 변환하여 비교 (타입 불일치 방지)
-    const postUserIdStr = postUserId ? String(postUserId) : null;
-    const finalCurrentUserIdStr = finalCurrentUserId ? String(finalCurrentUserId) : null;
+    // 최종 현재 사용자 ID 결정 (우선순위: user 객체 > sessionStorage > localStorage > JWT)
+    const finalCurrentUserId = userObjId || storedUserId || tokenUserId;
     
-    // user_id로 비교
-    const isMatchById = postUserIdStr && finalCurrentUserIdStr && 
-                        postUserIdStr === finalCurrentUserIdStr;
+    // 현재 로그인한 사용자 username 추출
+    let currentUsername = user?.username || user?.['username'];
+    // username이 없으면 name에서 괄호 앞 부분만 추출
+    if (!currentUsername && user?.name) {
+      const nameParts = String(user.name).split('(');
+      if (nameParts.length > 0) {
+        currentUsername = nameParts[0].trim();
+      }
+    }
+    
+    // 모든 값을 문자열로 변환하여 비교 (타입 불일치 방지)
+    const postUserIdStr = postUserId != null ? String(postUserId).trim() : null;
+    const finalCurrentUserIdStr = finalCurrentUserId != null ? String(finalCurrentUserId).trim() : null;
+    
+    // 숫자로도 비교 시도 (문자열 비교가 실패할 경우)
+    const postUserIdNum = postUserIdStr ? Number(postUserIdStr) : null;
+    const finalCurrentUserIdNum = finalCurrentUserIdStr ? Number(finalCurrentUserIdStr) : null;
+    const isNumericMatch = !isNaN(postUserIdNum) && !isNaN(finalCurrentUserIdNum) && 
+                           postUserIdNum === finalCurrentUserIdNum;
+    
+    // user_id로 비교 (문자열 + 숫자)
+    const isMatchById = (postUserIdStr && finalCurrentUserIdStr && 
+                         (postUserIdStr === finalCurrentUserIdStr || isNumericMatch));
     
     // username으로 비교 (user_id가 일치하지 않을 때 대체 방법)
     const isMatchByUsername = postUsername && currentUsername && 
-                              postUsername.trim() === currentUsername.trim();
+                              String(postUsername).trim().toLowerCase() === String(currentUsername).trim().toLowerCase();
     
     // user_id 또는 username 중 하나라도 일치하면 작성자로 인정
     const isMatch = isMatchById || isMatchByUsername;
     
-    console.log('🔍 작성자 확인 상세:', {
+    console.log('🔍 작성자 확인 상세 (견고한 로직):', {
       post: {
         id: post.id || post.post_id,
         title: post.title,
-        user_id: post.user_id,
-        userId: post.userId,
-        author_id: post.author_id,
-        username: postUsername,
+        'post.user_id': post.user_id,
+        'post.userId': post.userId,
+        'post.author_id': post.author_id,
+        'post.username': post.username,
+        'post.author': post.author,
         postUserId: postUserId,
-        postUserIdStr: postUserIdStr
+        postUserIdStr: postUserIdStr,
+        postUserIdNum: postUserIdNum,
+        postUsername: postUsername
       },
       user: {
-        id: user?.id,
-        userId: user?.userId,
-        user_id: user?.user_id,
-        username: currentUsername,
-        currentUserId: currentUserId
+        'user.id': user?.id,
+        'user.userId': user?.userId,
+        'user.user_id': user?.user_id,
+        'user.username': user?.username,
+        'user.name': user?.name,
+        userObjId: userObjId,
+        currentUsername: currentUsername
       },
       stored: {
-        sessionStorage: sessionStorage.getItem(AUTH_CONFIG.USER_ID_KEY),
-        localStorage: localStorage.getItem(AUTH_CONFIG.USER_ID_KEY),
+        sessionStorage: sessionUserId,
+        localStorage: localUserId,
         storedUserId: storedUserId
+      },
+      token: {
+        tokenUserId: tokenUserId
       },
       final: {
         finalCurrentUserId: finalCurrentUserId,
         finalCurrentUserIdStr: finalCurrentUserIdStr,
+        finalCurrentUserIdNum: finalCurrentUserIdNum,
+        isNumericMatch: isNumericMatch,
         isMatchById: isMatchById,
         isMatchByUsername: isMatchByUsername,
         isMatch: isMatch
-      }
+      },
+      '전체 post 객체 키': Object.keys(post || {}),
+      '전체 user 객체 키': Object.keys(user || {})
     });
     
     return isMatch;

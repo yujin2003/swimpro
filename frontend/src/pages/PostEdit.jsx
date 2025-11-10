@@ -156,43 +156,81 @@ export default function PostEdit() {
           if (apiPost) {
             console.log('✅ 서버에서 받은 게시글 데이터:', apiPost);
             
-            // 작성자 권한 확인 (user_id와 username 모두 확인)
-            const postUserId = apiPost.user_id || apiPost.userId || apiPost.author_id;
-            const numericCurrentUserId = Number(currentUserId);
-            const numericPostUserId = Number(postUserId);
+            // 작성자 권한 확인 (견고한 로직 - PostDetail과 동일)
+            const postUserId = apiPost.user_id || apiPost.userId || apiPost.author_id || apiPost.authorId || 
+                               apiPost['user_id'] || apiPost['userId'];
             
-            // user_id로 비교
-            const isMatchById = String(numericPostUserId) === String(numericCurrentUserId);
+            // sessionStorage/localStorage에서도 userId 확인
+            const sessionUserId = sessionStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+            const localUserId = localStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+            const storedUserId = sessionUserId || localUserId;
             
-            // username으로도 비교 (user_id가 일치하지 않을 때 대체 방법)
-            let postUsername = apiPost.username || apiPost.author;
-            // 괄호가 있으면 제거 (예: 'hhj03(사용자)' -> 'hhj03')
-            if (postUsername) {
-              postUsername = postUsername.split('(')[0].trim();
+            // JWT 토큰에서도 userId 추출 시도 (fallback)
+            let tokenUserId = null;
+            try {
+              const token = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY) || 
+                           localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+              if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                tokenUserId = payload.userId || payload.id || payload.user_id;
+              }
+            } catch (e) {
+              // 토큰 파싱 실패 시 무시
             }
             
-            let currentUsername = user?.username;
-            // username이 없으면 name에서 괄호 앞 부분만 추출
+            // 최종 현재 사용자 ID 결정
+            const finalCurrentUserId = currentUserId || storedUserId || tokenUserId;
+            
+            // 모든 값을 문자열로 변환하여 비교
+            const postUserIdStr = postUserId != null ? String(postUserId).trim() : null;
+            const finalCurrentUserIdStr = finalCurrentUserId != null ? String(finalCurrentUserId).trim() : null;
+            
+            // 숫자로도 비교 시도
+            const postUserIdNum = postUserIdStr ? Number(postUserIdStr) : null;
+            const finalCurrentUserIdNum = finalCurrentUserIdStr ? Number(finalCurrentUserIdStr) : null;
+            const isNumericMatch = !isNaN(postUserIdNum) && !isNaN(finalCurrentUserIdNum) && 
+                                   postUserIdNum === finalCurrentUserIdNum;
+            
+            // user_id로 비교 (문자열 + 숫자)
+            const isMatchById = (postUserIdStr && finalCurrentUserIdStr && 
+                                 (postUserIdStr === finalCurrentUserIdStr || isNumericMatch));
+            
+            // username으로도 비교 (user_id가 일치하지 않을 때 대체 방법)
+            let postUsername = apiPost.username || apiPost.author || apiPost['username'] || apiPost['author'];
+            if (postUsername) {
+              postUsername = String(postUsername).split('(')[0].trim();
+            }
+            
+            let currentUsername = user?.username || user?.['username'];
             if (!currentUsername && user?.name) {
-              currentUsername = user.name.split('(')[0].trim();
+              const nameParts = String(user.name).split('(');
+              if (nameParts.length > 0) {
+                currentUsername = nameParts[0].trim();
+              }
             }
             
             const isMatchByUsername = postUsername && currentUsername && 
-                                      postUsername.trim() === currentUsername.trim();
+                                      String(postUsername).trim().toLowerCase() === String(currentUsername).trim().toLowerCase();
             
             // user_id 또는 username 중 하나라도 일치하면 작성자로 인정
             const isAuthor = isMatchById || isMatchByUsername;
             
-            console.log('🔍 작성자 권한 확인:', {
+            console.log('🔍 작성자 권한 확인 (견고한 로직):', {
               postUserId,
+              postUserIdStr,
+              postUserIdNum,
               currentUserId,
-              numericPostUserId,
-              numericCurrentUserId,
+              finalCurrentUserId,
+              finalCurrentUserIdStr,
+              finalCurrentUserIdNum,
+              isNumericMatch,
               isMatchById,
               postUsername,
               currentUsername,
               isMatchByUsername,
-              isAuthor
+              isAuthor,
+              stored: { sessionUserId, localUserId, storedUserId },
+              token: { tokenUserId }
             });
             
             if (!isAuthor) {
@@ -539,43 +577,81 @@ export default function PostEdit() {
       return;
     }
     
-    // 작성자 권한 확인 (user_id와 username 모두 확인)
-    const postUserId = original?.user_id || original?.userId || original?.author_id;
-    const numericCurrentUserId = Number(currentUserId);
-    const numericPostUserId = Number(postUserId);
+    // 작성자 권한 확인 (견고한 로직 - PostDetail과 동일)
+    const postUserId = original?.user_id || original?.userId || original?.author_id || original?.authorId || 
+                       original?.['user_id'] || original?.['userId'];
     
-    // user_id로 비교
-    const isMatchById = String(numericPostUserId) === String(numericCurrentUserId);
+    // sessionStorage/localStorage에서도 userId 확인
+    const sessionUserId = sessionStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+    const localUserId = localStorage.getItem(AUTH_CONFIG.USER_ID_KEY);
+    const storedUserId = sessionUserId || localUserId;
     
-    // username으로도 비교 (user_id가 일치하지 않을 때 대체 방법)
-    let postUsername = original?.username || original?.author;
-    // 괄호가 있으면 제거 (예: 'hhj03(사용자)' -> 'hhj03')
-    if (postUsername) {
-      postUsername = postUsername.split('(')[0].trim();
+    // JWT 토큰에서도 userId 추출 시도 (fallback)
+    let tokenUserId = null;
+    try {
+      const token = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY) || 
+                   localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        tokenUserId = payload.userId || payload.id || payload.user_id;
+      }
+    } catch (e) {
+      // 토큰 파싱 실패 시 무시
     }
     
-    let currentUsername = user?.username;
-    // username이 없으면 name에서 괄호 앞 부분만 추출
+    // 최종 현재 사용자 ID 결정
+    const finalCurrentUserId = currentUserId || storedUserId || tokenUserId;
+    
+    // 모든 값을 문자열로 변환하여 비교
+    const postUserIdStr = postUserId != null ? String(postUserId).trim() : null;
+    const finalCurrentUserIdStr = finalCurrentUserId != null ? String(finalCurrentUserId).trim() : null;
+    
+    // 숫자로도 비교 시도
+    const postUserIdNum = postUserIdStr ? Number(postUserIdStr) : null;
+    const finalCurrentUserIdNum = finalCurrentUserIdStr ? Number(finalCurrentUserIdStr) : null;
+    const isNumericMatch = !isNaN(postUserIdNum) && !isNaN(finalCurrentUserIdNum) && 
+                           postUserIdNum === finalCurrentUserIdNum;
+    
+    // user_id로 비교 (문자열 + 숫자)
+    const isMatchById = (postUserIdStr && finalCurrentUserIdStr && 
+                         (postUserIdStr === finalCurrentUserIdStr || isNumericMatch));
+    
+    // username으로도 비교 (user_id가 일치하지 않을 때 대체 방법)
+    let postUsername = original?.username || original?.author || original?.['username'] || original?.['author'];
+    if (postUsername) {
+      postUsername = String(postUsername).split('(')[0].trim();
+    }
+    
+    let currentUsername = user?.username || user?.['username'];
     if (!currentUsername && user?.name) {
-      currentUsername = user.name.split('(')[0].trim();
+      const nameParts = String(user.name).split('(');
+      if (nameParts.length > 0) {
+        currentUsername = nameParts[0].trim();
+      }
     }
     
     const isMatchByUsername = postUsername && currentUsername && 
-                              postUsername.trim() === currentUsername.trim();
+                              String(postUsername).trim().toLowerCase() === String(currentUsername).trim().toLowerCase();
     
     // user_id 또는 username 중 하나라도 일치하면 작성자로 인정
     const isAuthor = isMatchById || isMatchByUsername;
     
-    console.log('🔍 삭제 권한 확인:', {
+    console.log('🔍 삭제 권한 확인 (견고한 로직):', {
       postUserId,
+      postUserIdStr,
+      postUserIdNum,
       currentUserId,
-      numericPostUserId,
-      numericCurrentUserId,
+      finalCurrentUserId,
+      finalCurrentUserIdStr,
+      finalCurrentUserIdNum,
+      isNumericMatch,
       isMatchById,
       postUsername,
       currentUsername,
       isMatchByUsername,
-      isAuthor
+      isAuthor,
+      stored: { sessionUserId, localUserId, storedUserId },
+      token: { tokenUserId }
     });
     
     if (!isAuthor) {
