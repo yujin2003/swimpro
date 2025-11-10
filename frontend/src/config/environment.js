@@ -6,8 +6,8 @@ const isProduction = import.meta.env.PROD;
 
 export const API_CONFIG = {
   // Vercel 환경 변수(VITE_API_URL)를 읽어옵니다.
-  // 환경 변수가 없으면 ngrok URL을 기본값으로 사용
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://yasuko-bulletless-trudi.ngrok-free.dev',
+  // 환경 변수가 없으면 Render.com URL을 기본값으로 사용
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://swimpro.onrender.com',
   
   // API 엔드포인트
   ENDPOINTS: {

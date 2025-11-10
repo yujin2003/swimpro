@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../components/TopNav";
 import { messagesAPI, handleAPIError } from "../services/api.js";
-import { AUTH_CONFIG } from "../config/environment.js";
+import { AUTH_CONFIG, API_CONFIG } from "../config/environment.js";
 import { useUser } from "../store/user.jsx";
 
 // 전역으로 user 참조를 위한 변수 (ChatBubble에서 사용)
@@ -370,7 +370,6 @@ export default function ChatPage() {
   // WebSocket 연결 초기화 (1단계: 실시간 메시지를 받기 위한 준비)
   const initWebSocket = () => {
     console.log('📡 [1단계] WebSocket 연결 시작...');
-    console.log('📡 WebSocket URL: wss://yasuko-bulletless-trudi.ngrok-free.dev/');
     
     // sessionStorage 우선 사용 (각 창 독립적)
     const token = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY) || localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
@@ -379,8 +378,10 @@ export default function ChatPage() {
       return;
     }
 
-    // WebSocket URL (ngrok 주소 사용)
-    const wsUrl = 'wss://yasuko-bulletless-trudi.ngrok-free.dev/';
+    // WebSocket URL (API BASE_URL에서 가져오기, http -> ws, https -> wss)
+    const baseUrl = API_CONFIG.BASE_URL;
+    const wsUrl = baseUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:') + '/';
+    console.log('📡 WebSocket URL:', wsUrl);
     
     try {
       const ws = new WebSocket(wsUrl);

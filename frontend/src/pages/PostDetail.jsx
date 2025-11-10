@@ -194,9 +194,13 @@ export default function PostDetail() {
         console.error('❌ 게시글 로드 실패:', err);
         
         // API 실패 시 로컬 posts에서 찾기 (폴백)
+        // numericId가 정의되지 않았을 수 있으므로 다시 계산
+        const numericIdForFallback = id ? parseInt(id, 10) : null;
         const localPost = posts.find((p) => {
           const postId = p.post_id || p.id;
-          return postId && (postId.toString() === id || postId.toString() === numericId.toString());
+          if (!postId) return false;
+          const postIdStr = postId.toString();
+          return postIdStr === id || (numericIdForFallback && !isNaN(numericIdForFallback) && postIdStr === numericIdForFallback.toString());
         });
         if (localPost) {
           console.log('📱 로컬 데이터로 폴백:', localPost);
