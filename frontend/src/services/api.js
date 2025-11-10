@@ -138,7 +138,8 @@ async function apiRequest(endpoint, options = {}) {
     debugLog('응답 길이:', data?.length);
     if (data && data.length > 0) {
       debugLog('첫 번째 항목:', data[0]);
-      debugLog('첫 번째 항목 ID:', data[0]?.id, '타입:', typeof data[0]?.id);
+      debugLog('첫 번째 항목 ID:', data[0]?.id || data[0]?.post_id, '타입:', typeof (data[0]?.id || data[0]?.post_id));
+      debugLog('첫 번째 항목 post_id:', data[0]?.post_id, 'id:', data[0]?.id);
     }
     return data;
   } catch (error) {

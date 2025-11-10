@@ -182,6 +182,24 @@ export default function MentoringHome() {
           console.log('✅ 백엔드 응답 받음:', data);
           console.log('💡 추천 게시글 로드 성공:', data);
           console.log('💡 추천 게시글 개수:', data?.length || 0);
+          
+          // 추천 게시글 데이터 상세 확인
+          if (data && data.length > 0) {
+            data.forEach((post, idx) => {
+              console.log(`🔍 추천 게시글 ${idx}:`, {
+                post_id: post.post_id,
+                id: post.id,
+                title: post.title,
+                '전체 키': Object.keys(post),
+                'post_id 타입': typeof post.post_id,
+                'id 타입': typeof post.id
+              });
+              
+              if (!post.post_id && !post.id) {
+                console.error(`❌ 추천 게시글 ${idx}에 ID가 없습니다:`, post);
+              }
+            });
+          }
         } catch (err) {
           console.error('❌ 백엔드 API 호출 실패:', err);
           console.warn('⚠️ 추천 게시글 로드 실패, 최신 게시글 상위 3개 사용:', err);
@@ -371,7 +389,12 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
               
               // postId 검증
               if (!postId) {
-                console.error('❌ 추천 게시글에 ID가 없습니다:', post);
+                console.error('❌ 추천 게시글에 ID가 없습니다:', {
+                  post,
+                  'post.post_id': post.post_id,
+                  'post.id': post.id,
+                  '전체 키': Object.keys(post)
+                });
               }
               
                     // 날짜/시간 포맷팅 (메인 게시글 목록과 완전히 동일한 로직)
@@ -536,11 +559,31 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                       });
                     }
               
-              // 활동 종류 (category/stroke) - 메인 게시글 데이터 사용
-              const categoryText = displayPost.category || displayPost.stroke || '';
+              // 활동 종류 (category/stroke) - metadata에서도 추출 시도
+              let categoryText = displayPost.category || displayPost.stroke || '';
+              if (!categoryText && displayPost.metadata) {
+                try {
+                  const metadata = typeof displayPost.metadata === 'string' 
+                    ? JSON.parse(displayPost.metadata) 
+                    : displayPost.metadata;
+                  categoryText = metadata.event || metadata.category || categoryText;
+                } catch (e) {
+                  // metadata 파싱 실패 시 무시
+                }
+              }
               
-              // 위치 - 메인 게시글 데이터 사용
-              const placeText = displayPost.location || displayPost.region || '';
+              // 위치 - metadata에서도 추출 시도
+              let placeText = displayPost.location || displayPost.region || '';
+              if (!placeText && displayPost.metadata) {
+                try {
+                  const metadata = typeof displayPost.metadata === 'string' 
+                    ? JSON.parse(displayPost.metadata) 
+                    : displayPost.metadata;
+                  placeText = metadata.location || metadata.region || placeText;
+                } catch (e) {
+                  // metadata 파싱 실패 시 무시
+                }
+              }
               
               // 거리/시간 (distance가 있으면 표시) - 메인 게시글 데이터 사용
               const distanceText = displayPost.distance ? `${displayPost.distance}m` : '';
@@ -552,53 +595,83 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                   onClick={(e) => {
                     if (!postId) {
                       e.preventDefault();
-                      console.error('❌ 추천 게시글 클릭: ID가 없습니다', post);
-                      alert('게시글 ID가 없습니다.');
-                    } else {
-                      console.log('🔘 추천 게시글 클릭:', {
+                      console.error('❌ 추천 게시글 클릭: ID가 없습니다', {
+                        post,
+                        'post.post_id': post.post_id,
+                        'post.id': post.id,
+                        '전체 키': Object.keys(post)
+                      });
+                      alert('게시글 ID가 없어서 이동할 수 없습니다.');
+                      return;
+                    }
+                    
+                    // postId가 실제로 존재하는지 확인
+                    const postExists = posts.some(p => {
+                      const mainPostId = p.post_id || p.id;
+                      return mainPostId && String(mainPostId) === String(postId);
+                    });
+                    
+                    if (!postExists) {
+                      console.warn('⚠️ 추천 게시글 ID가 메인 목록에 없습니다:', {
                         postId,
                         title: postTitle,
-                        'post.post_id': post.post_id,
-                        'post.id': post.id
+                        '메인 게시글 ID 목록': posts.map(p => p.post_id || p.id)
                       });
+                      // 존재하지 않아도 클릭은 허용 (백엔드에서 확인)
                     }
+                    
+                    console.log('🔘 추천 게시글 클릭:', {
+                      postId,
+                      title: postTitle,
+                      'post.post_id': post.post_id,
+                      'post.id': post.id,
+                      postExists
+                    });
                   }}
                   className={[
-                    "flex items-center gap-3 rounded-lg p-3 transition-colors",
-                    index % 2 === 0
-                      ? "bg-white"
+                    "flex items-center gap-4 rounded-lg px-4 py-4 transition-colors",
+                    index % 2 === 1
+                      ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white"
                       : "bg-white"
                   ].join(" ")}
                 >
                   <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
                   <div className={[
                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                    index % 2 === 1 ? "bg-blue-500 text-white" : "bg-blue-500 text-white"
+                    index % 2 === 1 ? "bg-white/20 text-white" : "bg-blue-500 text-white"
                   ].join(" ")}>
                     {index + 1}
                   </div>
                   <div className="min-w-0 flex-1 leading-tight">
-                    <p className="text-[14px] font-medium">{postTitle}</p>
+                    <p className={index % 2 === 1 ? "text-white font-medium" : "text-[14px] font-medium"}>{postTitle}</p>
                     {displayTime && (
-                      <p className="text-[13px] opacity-90">
+                      <p className={index % 2 === 1 ? "text-white/90 text-sm" : "text-[13px] opacity-90"}>
                         일시: {displayTime}
                       </p>
                     )}
                     <div className="flex gap-2 mt-1">
                       {categoryText && categoryText !== "기타" && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          index % 2 === 1 
+                            ? "bg-white/20 text-white" 
+                            : "bg-blue-100 text-blue-800"
+                        }`}>
                           🏊‍♂️ {categoryText}
                         </span>
                       )}
                       {placeText && placeText !== "기타" && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          index % 2 === 1 
+                            ? "bg-white/20 text-white" 
+                            : "bg-green-100 text-green-800"
+                        }`}>
                           📍 {placeText}
                         </span>
                       )}
                     </div>
                   </div>
                   {distanceText && (
-                    <div className="text-[13px] text-gray-400">
+                    <div className={`text-[13px] ${index % 2 === 1 ? "text-white/80" : "text-gray-400"}`}>
                       {distanceText}
                     </div>
                   )}
@@ -822,11 +895,31 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                       });
                     }
                     
-                    // 활동 종류 (category/stroke) - 메인 게시글 데이터 사용
-                    const categoryText = displayPost.category || displayPost.stroke || '';
+                    // 활동 종류 (category/stroke) - metadata에서도 추출 시도
+                    let categoryText = displayPost.category || displayPost.stroke || '';
+                    if (!categoryText && displayPost.metadata) {
+                      try {
+                        const metadata = typeof displayPost.metadata === 'string' 
+                          ? JSON.parse(displayPost.metadata) 
+                          : displayPost.metadata;
+                        categoryText = metadata.event || metadata.category || categoryText;
+                      } catch (e) {
+                        // metadata 파싱 실패 시 무시
+                      }
+                    }
                     
-                    // 위치 - 메인 게시글 데이터 사용
-                    const placeText = displayPost.location || displayPost.region || '';
+                    // 위치 - metadata에서도 추출 시도
+                    let placeText = displayPost.location || displayPost.region || '';
+                    if (!placeText && displayPost.metadata) {
+                      try {
+                        const metadata = typeof displayPost.metadata === 'string' 
+                          ? JSON.parse(displayPost.metadata) 
+                          : displayPost.metadata;
+                        placeText = metadata.location || metadata.region || placeText;
+                      } catch (e) {
+                        // metadata 파싱 실패 시 무시
+                      }
+                    }
                     
                     // 거리/시간 (distance가 있으면 표시) - 메인 게시글 데이터 사용
                     const distanceText = displayPost.distance ? `${displayPost.distance}m` : '';
@@ -850,41 +943,49 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                           }
                         }}
                         className={[
-                          "flex items-center gap-3 rounded-lg p-3 transition-colors",
-                          index % 2 === 0
-                            ? "bg-white"
+                          "flex items-center gap-4 rounded-lg px-4 py-4 transition-colors",
+                          index % 2 === 1
+                            ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white"
                             : "bg-white"
                         ].join(" ")}
                       >
                         <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
                         <div className={[
                           "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                          index % 2 === 1 ? "bg-blue-500 text-white" : "bg-blue-500 text-white"
+                          index % 2 === 1 ? "bg-white/20 text-white" : "bg-blue-500 text-white"
                         ].join(" ")}>
                           {index + 1}
                         </div>
                         <div className="min-w-0 flex-1 leading-tight">
-                          <p className="text-[14px] font-medium">{postTitle}</p>
+                          <p className={index % 2 === 1 ? "text-white font-medium" : "text-[14px] font-medium"}>{postTitle}</p>
                           {displayTime && (
-                            <p className="text-[13px] opacity-90">
+                            <p className={index % 2 === 1 ? "text-white/90 text-sm" : "text-[13px] opacity-90"}>
                               일시: {displayTime}
                             </p>
                           )}
                           <div className="flex gap-2 mt-1">
                             {categoryText && categoryText !== "기타" && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                index % 2 === 1 
+                                  ? "bg-white/20 text-white" 
+                                  : "bg-blue-100 text-blue-800"
+                              }`}>
                                 🏊‍♂️ {categoryText}
                               </span>
                             )}
                             {placeText && placeText !== "기타" && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                index % 2 === 1 
+                                  ? "bg-white/20 text-white" 
+                                  : "bg-green-100 text-green-800"
+                              }`}>
                                 📍 {placeText}
                               </span>
                             )}
                           </div>
                         </div>
                         {distanceText && (
-                          <div className="text-[13px] text-gray-400">
+                          <div className={`text-[13px] ${index % 2 === 1 ? "text-white/80" : "text-gray-400"}`}>
                             {distanceText}
                           </div>
                         )}

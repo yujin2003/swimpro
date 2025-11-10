@@ -319,6 +319,8 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
             const fallbackQuery = `
                 SELECT 
                     post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
+                    metadata->>'event' as category,
+                    metadata->>'location' as location,
                     (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
                 FROM posts p
                 WHERE post_id != $1
@@ -347,6 +349,8 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         const query = `
             SELECT 
                 post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
+                metadata->>'event' as category,
+                metadata->>'location' as location,
                 (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
             FROM posts p
             WHERE metadata->>'user_type' = $1  
@@ -359,11 +363,20 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         
         const recommendedPosts = await pool.query(query, [baseUserType, baseEvent, targetRole, id]);
         
+        // 디버깅: 추천 게시글 데이터 확인
+        console.log('🔍 추천 게시글 쿼리 결과:', {
+            count: recommendedPosts.rows.length,
+            firstPost: recommendedPosts.rows[0] || null,
+            firstPostId: recommendedPosts.rows[0]?.post_id || null
+        });
+        
         // 추천 게시글이 없으면 최신 게시글 3개 반환
         if (recommendedPosts.rows.length === 0) {
             const fallbackQuery = `
                 SELECT 
                     post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
+                    metadata->>'event' as category,
+                    metadata->>'location' as location,
                     (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
                 FROM posts p
                 WHERE post_id != $1
@@ -371,10 +384,69 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
                 LIMIT 3
             `;
             const fallbackPosts = await pool.query(fallbackQuery, [id]);
-            return res.json(fallbackPosts.rows);
+            console.log('🔍 Fallback 추천 게시글:', {
+                count: fallbackPosts.rows.length,
+                firstPost: fallbackPosts.rows[0] || null,
+                firstPostId: fallbackPosts.rows[0]?.post_id || null
+            });
+            
+            // Fallback 데이터도 정규화
+            const validatedFallback = fallbackPosts.rows.map(row => ({
+                post_id: row.post_id,
+                id: row.post_id,
+                title: row.title,
+                metadata: row.metadata,
+                event_datetime: row.event_datetime,
+                event_end_datetime: row.event_end_datetime,
+                created_at: row.created_at,
+                user_id: row.user_id,
+                username: row.username,
+                category: row.category || (row.metadata?.event ? row.metadata.event : null),
+                location: row.location || (row.metadata?.location ? row.metadata.location : null)
+            }));
+            
+            return res.json(validatedFallback);
         }
         
-        res.json(recommendedPosts.rows);
+        // 응답 데이터 검증 및 정규화
+        const validatedPosts = recommendedPosts.rows.map((row, idx) => {
+            // post_id가 없으면 에러 로그
+            if (!row.post_id) {
+                console.error(`❌ 추천 게시글 ${idx}에 post_id가 없습니다:`, {
+                    row,
+                    '전체 키': Object.keys(row),
+                    'row.post_id': row.post_id,
+                    'row.id': row.id
+                });
+            }
+            
+            // 응답 데이터 정규화 (명시적으로 post_id 포함)
+            return {
+                post_id: row.post_id, // 반드시 포함
+                id: row.post_id, // 호환성을 위해 id도 추가
+                title: row.title,
+                metadata: row.metadata,
+                event_datetime: row.event_datetime,
+                event_end_datetime: row.event_end_datetime,
+                created_at: row.created_at,
+                user_id: row.user_id,
+                username: row.username,
+                category: row.category || (row.metadata?.event ? row.metadata.event : null),
+                location: row.location || (row.metadata?.location ? row.metadata.location : null)
+            };
+        });
+        
+        console.log('✅ 추천 게시글 최종 응답:', {
+            count: validatedPosts.length,
+            posts: validatedPosts.map(p => ({ 
+                post_id: p.post_id, 
+                id: p.id,
+                title: p.title,
+                'post_id 타입': typeof p.post_id
+            }))
+        });
+        
+        res.json(validatedPosts);
 
     } catch (err) {
         console.error("추천 API 오류:", err.message);
