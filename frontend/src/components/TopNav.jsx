@@ -1,13 +1,19 @@
 // src/components/TopNav.jsx
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "../store/user.jsx";
 
 export default function TopNav() {
   const { user, isLoggedIn, logout } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isEtcOpen, setIsEtcOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // 메인 페이지(/)와 멘토링 페이지(/mentoring)가 아닐 때 검은색 메뉴
+  const isWhiteMenu = location.pathname === '/' || location.pathname === '/mentoring';
+  const menuTextColor = isWhiteMenu ? 'text-white' : 'text-black';
+  const menuTextShadow = isWhiteMenu ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none';
 
   // 멘토링 버튼 클릭 핸들러 (강제 라우팅)
   const handleMentoringClick = (e) => {
@@ -104,27 +110,27 @@ export default function TopNav() {
   return (
     <header className="relative" style={{ position: 'relative', zIndex: 1000, isolation: 'isolate' }}>
       <nav className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-4" style={{ position: 'relative', zIndex: 1001 }}>
-        <ul className="flex items-center gap-8 text-[22px] font-medium text-white" style={{ position: 'relative', zIndex: 1002, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}>
+        <ul className={`flex items-center gap-8 text-[20px] font-medium ${menuTextColor}`} style={{ position: 'relative', zIndex: 1002, textShadow: menuTextShadow }}>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="text-white hover:opacity-80 transition-opacity" 
+              className={`${menuTextColor} hover:opacity-80 transition-opacity`} 
               to="/about"
               onClick={(e) => {
                 console.log('🔘 About 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: menuTextShadow }}
             >
               About
             </Link>
           </li>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="text-white hover:opacity-80 transition-opacity" 
+              className={`${menuTextColor} hover:opacity-80 transition-opacity`} 
               to="/routine"
               onClick={(e) => {
                 console.log('🔘 Routine 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: menuTextShadow }}
             >
               Routine
             </Link>
@@ -156,19 +162,19 @@ export default function TopNav() {
               onMouseLeave={() => {
                 console.log('🖱️ 멘토링 버튼에서 마우스 나감');
               }}
-              className="text-white hover:opacity-80 transition-opacity relative inline-block bg-transparent border-none cursor-pointer text-[22px] font-medium p-0 m-0"
+              className={`${menuTextColor} hover:opacity-80 transition-opacity relative inline-block bg-transparent border-none cursor-pointer text-[20px] font-medium p-0 m-0`}
               style={{ 
                 pointerEvents: 'auto', 
                 cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-block',
                 fontFamily: 'inherit',
-                color: 'white',
+                color: isWhiteMenu ? 'white' : 'black',
                 outline: 'none',
                 position: 'relative',
                 zIndex: 1001,
                 userSelect: 'none',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
+                textShadow: menuTextShadow
               }}
               aria-label="멘토링 페이지로 이동"
               type="button"
@@ -187,12 +193,12 @@ export default function TopNav() {
           </li>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="text-white hover:opacity-80 transition-opacity" 
+              className={`${menuTextColor} hover:opacity-80 transition-opacity`} 
               to="/record"
               onClick={(e) => {
                 console.log('🔘 Record 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: menuTextShadow }}
             >
               Record
             </Link>
@@ -200,8 +206,8 @@ export default function TopNav() {
           <li className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsEtcOpen(!isEtcOpen)}
-              className="text-white hover:opacity-80 transition-opacity flex items-center gap-1"
-              style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
+              className={`${menuTextColor} hover:opacity-80 transition-opacity flex items-center gap-1`}
+              style={{ textShadow: menuTextShadow }}
             >
               etc
               <svg className={`w-4 h-4 transition-transform ${isEtcOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,11 +241,11 @@ export default function TopNav() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-xl">
               {user.avatar}
             </div>
-            <span className="text-sm font-medium text-white" style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}>{user.name || user.username}</span>
+            <span className={`text-sm font-medium ${menuTextColor}`} style={{ textShadow: menuTextShadow }}>{user.name || user.username}</span>
             <button
               onClick={logout}
-              className="text-sm text-white hover:opacity-80 transition-opacity"
-              style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
+              className={`text-sm ${menuTextColor} hover:opacity-80 transition-opacity`}
+              style={{ textShadow: menuTextShadow }}
             >
               Logout
             </button>

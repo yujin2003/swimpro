@@ -62,12 +62,32 @@ export function UserProvider({ children }) {
   };
 
   useEffect(() => {
-    // 초기 로드
-    loadUser();
-
-    // sessionStorage는 각 창이 독립적이므로 storage 이벤트 리스너 불필요
-    // 각 창이 독립적으로 작동하도록 함
-    console.log('✅ UserProvider 초기화 완료 (독립 창 모드)');
+    // 앱 시작 시 스토리지를 초기화하여 로그인하지 않은 상태로 시작
+    // 사용자가 직접 로그인해야 함
+    try {
+      // sessionStorage 초기화
+      sessionStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_CONFIG.USER_KEY);
+      sessionStorage.removeItem(AUTH_CONFIG.USER_ID_KEY);
+      
+      // localStorage도 초기화
+      localStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
+      localStorage.removeItem(AUTH_CONFIG.USER_KEY);
+      localStorage.removeItem(AUTH_CONFIG.USER_ID_KEY);
+      
+      // 상태 초기화
+      setUser(null);
+      setToken(null);
+      setIsLoggedIn(false);
+      
+      console.log('✅ UserProvider 초기화 완료 - 로그인 상태 초기화됨');
+    } catch (error) {
+      console.error('초기화 실패:', error);
+      // 에러 발생 시에도 상태는 초기화
+      setUser(null);
+      setToken(null);
+      setIsLoggedIn(false);
+    }
   }, []);
 
   // 로그인 함수 - sessionStorage 사용 (각 창 독립적)
