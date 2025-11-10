@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+// 1. TopNav 컴포넌트를 import 합니다.
+import TopNav from "./components/TopNav";
 
 export default function SwimmingLandingPage() {
   return (
@@ -14,47 +16,8 @@ export default function SwimmingLandingPage() {
         <div className="absolute inset-0 bg-black/40" />
       </div>
 
-      {/* 네비게이션 */}
-      <nav className="absolute top-0 w-full flex justify-end items-center gap-6 p-6 text-lg font-medium">
-        <Link to="/about" className="hover:opacity-80">About</Link>
-        <Link to="/routine" className="hover:opacity-80">Routine</Link>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            console.log('🔘🔘🔘 멘토링 버튼 클릭 (SwimmingLandingPage):', {
-              href: '/mentoring',
-              timestamp: new Date().toISOString()
-            });
-            // navigate를 사용하기 위해 useNavigate 추가 필요
-            window.location.href = '/mentoring';
-          }}
-          className="hover:opacity-80 bg-transparent border-none cursor-pointer text-lg font-medium text-white"
-          style={{ 
-            pointerEvents: 'auto',
-            cursor: 'pointer',
-            padding: 0,
-            margin: 0
-          }}
-        >
-          Mentoring
-        </button>
-        <Link to="/record" className="hover:opacity-80">Record</Link>
-        <Link to="/shopping" className="hover:opacity-80">etc</Link>
-
-
-        <Link
-          to="/signup"
-          className="rounded-xl px-5 py-2 bg-black/70 text-white"
-        >
-          Sign Up
-        </Link>
-        <Link
-          to="/signin"
-          className="rounded-xl px-5 py-2 bg-indigo-500 text-white"
-        >
-          Sign In
-        </Link>
-      </nav>
+      {/* 2. 기존 <nav>...</nav> 블록 전체를 <TopNav />로 교체합니다. */}
+      <TopNav />
 
       {/* Hero Section */}
       <div className="relative flex h-full max-w-2xl flex-col justify-center px-12">
@@ -97,4 +60,3 @@ export default function SwimmingLandingPage() {
     </div>
   );
 }
-
