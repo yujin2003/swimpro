@@ -6,9 +6,10 @@ import TopNav from "../components/TopNav";
 import { postsAPI } from "../services/api.js";
 
 export default function MentoringHome() {
-  const { posts, loading, error, loadPosts } = usePosts();
+  const { posts, loading, error, loadPosts, pagination } = usePosts();
   const [q, setQ] = useState("");
   const [searchQuery, setSearchQuery] = useState(""); // 실제 검색에 사용할 검색어 (debounce)
+  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지
   const [bestPosts, setBestPosts] = useState([]);
   const [bestPostsLoading, setBestPostsLoading] = useState(false);
   const [recommendedPosts, setRecommendedPosts] = useState([]);
@@ -28,6 +29,13 @@ export default function MentoringHome() {
     });
   }, [location.pathname, location.search, location.state, posts.length]);
 
+  // 페이지네이션 정보가 업데이트되면 currentPage 동기화
+  useEffect(() => {
+    if (pagination && pagination.currentPage !== currentPage) {
+      setCurrentPage(pagination.currentPage);
+    }
+  }, [pagination]);
+
   // 검색어 변경 시 debounce 적용하여 API 호출
   useEffect(() => {
     // 이전 timeout 취소
@@ -35,10 +43,13 @@ export default function MentoringHome() {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    // 검색어가 변경되면 첫 페이지로 리셋
+    setCurrentPage(1);
+
     // 검색어가 비어있으면 즉시 전체 게시글 로드
     if (q.trim() === '') {
       setSearchQuery('');
-      loadPosts('');
+      loadPosts('', 1, 10);
       return;
     }
 
@@ -46,7 +57,7 @@ export default function MentoringHome() {
     searchTimeoutRef.current = setTimeout(() => {
       console.log('🔍 검색어 변경 감지, API 호출:', q);
       setSearchQuery(q.trim());
-      loadPosts(q.trim());
+      loadPosts(q.trim(), 1, 10); // 검색 시 첫 페이지로
     }, 500);
 
     // cleanup 함수
@@ -67,8 +78,8 @@ export default function MentoringHome() {
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       // 약간의 지연을 두어 state 제거 후 로드 (레이아웃 시프트 최소화)
       const timer = setTimeout(async () => {
-        // 현재 검색어를 유지하여 새로고침
-        await loadPosts(searchQuery);
+        // 현재 검색어와 페이지를 유지하여 새로고침
+        await loadPosts(searchQuery, currentPage, 10);
         // 로드 완료 후 refresh 상태 해제 (약간의 지연 후)
         setTimeout(() => {
           wasRefreshingRef.current = true; // refresh 완료 표시
@@ -78,7 +89,7 @@ export default function MentoringHome() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [location.state?.refresh, loadPosts, searchQuery]);
+  }, [location.state?.refresh, loadPosts, searchQuery, currentPage]);
 
   // 게시판1 페이지 로드 시 sessionStorage에서 newPostId 확인 및 추천 게시글 요청
   useEffect(() => {
@@ -123,7 +134,9 @@ export default function MentoringHome() {
       wasRefreshingRef.current = false;
       bestPostsLoadedRef.current = false; // 다시 로드 가능하도록 리셋
       
-      // 가장 최근 게시글의 ID 찾기
+      // 가장 최근 게시글의 ID 찾기 (posts가 비어있지 않은 경우만)
+      if (posts.length === 0) return;
+      
       const sortedPosts = [...posts].sort((a, b) => {
         const dateA = new Date(a.created_at || a.event_datetime || 0);
         const dateB = new Date(b.created_at || b.event_datetime || 0);
@@ -356,14 +369,29 @@ export default function MentoringHome() {
               </div>
             </div>
           ) : (
-                   <LeftList 
-                     posts={filtered} 
-                     q={q} 
-                     setQ={setQ} 
-                     bestPosts={bestPosts} 
-                     bestPostsLoading={bestPostsLoading}
-                     recommendedPosts={recommendedPosts}
-                   />
+            <>
+              <LeftList 
+                posts={filtered} 
+                q={q} 
+                setQ={setQ} 
+                bestPosts={bestPosts} 
+                bestPostsLoading={bestPostsLoading}
+                recommendedPosts={recommendedPosts}
+              />
+              {/* 페이지네이션 */}
+              {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={(page) => {
+                    setCurrentPage(page);
+                    loadPosts(searchQuery, page, 10);
+                    // 페이지 변경 시 스크롤을 맨 위로
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
         <RightPanel />
@@ -1389,6 +1417,128 @@ function SideItem({ icon, label, to }) {
 }
 
 /* --------------------------------- Icons ---------------------------------- */
+// 페이지네이션 컴포넌트
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  // 표시할 페이지 번호 계산 (현재 페이지 기준 앞뒤 2개씩)
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5; // 최대 표시할 페이지 수
+    
+    if (totalPages <= maxVisible) {
+      // 전체 페이지가 적으면 모두 표시
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // 현재 페이지 기준으로 앞뒤 2개씩 표시
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, currentPage + 2);
+      
+      // 시작 부분 조정
+      if (end - start < 4) {
+        if (currentPage <= 3) {
+          end = Math.min(5, totalPages);
+        } else {
+          start = Math.max(1, totalPages - 4);
+        }
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <div className="mt-6 flex items-center justify-center gap-1">
+      {/* 첫 페이지로 이동 */}
+      <button
+        onClick={() => onPageChange(1)}
+        disabled={currentPage === 1}
+        className={`flex h-9 w-9 items-center justify-center rounded border ${
+          currentPage === 1
+            ? 'cursor-not-allowed border-gray-300 text-gray-300'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+        aria-label="첫 페이지로 이동"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+        </svg>
+      </button>
+
+      {/* 이전 페이지로 이동 */}
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`flex h-9 w-9 items-center justify-center rounded border ${
+          currentPage === 1
+            ? 'cursor-not-allowed border-gray-300 text-gray-300'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+        aria-label="이전 페이지로 이동"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      {/* 페이지 번호 버튼들 */}
+      {pageNumbers.map((pageNum) => (
+        <button
+          key={pageNum}
+          onClick={() => onPageChange(pageNum)}
+          className={`flex h-9 w-9 items-center justify-center rounded border ${
+            pageNum === currentPage
+              ? 'border-gray-800 bg-gray-800 text-white'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+          aria-label={`${pageNum}페이지로 이동`}
+          aria-current={pageNum === currentPage ? 'page' : undefined}
+        >
+          {pageNum}
+        </button>
+      ))}
+
+      {/* 다음 페이지로 이동 */}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`flex h-9 w-9 items-center justify-center rounded border ${
+          currentPage === totalPages
+            ? 'cursor-not-allowed border-gray-300 text-gray-300'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+        aria-label="다음 페이지로 이동"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* 마지막 페이지로 이동 */}
+      <button
+        onClick={() => onPageChange(totalPages)}
+        disabled={currentPage === totalPages}
+        className={`flex h-9 w-9 items-center justify-center rounded border ${
+          currentPage === totalPages
+            ? 'cursor-not-allowed border-gray-300 text-gray-300'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+        aria-label="마지막 페이지로 이동"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function SearchIcon({ className = "" }) {
   return (
     <svg

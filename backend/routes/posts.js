@@ -93,11 +93,16 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 });
 
-// 2. 전체 게시글 목록 조회 API (Read)
-// GET /api/posts
+// 2. 전체 게시글 목록 조회 API (Read) - 페이지네이션 지원
+// GET /api/posts?page=1&limit=10&search=...
 router.get("/", async (req, res) => {
     try {
-        const { category, location, search } = req.query;
+        const { category, location, search, page = '1', limit = '10' } = req.query;
+
+        // 페이지네이션 파라미터 파싱
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const offset = (pageNum - 1) * limitNum;
 
         let baseQuery = 
             `SELECT 
@@ -133,8 +138,33 @@ router.get("/", async (req, res) => {
 
         baseQuery += " ORDER BY posts.created_at DESC";
 
+        // 전체 게시글 수 조회 (페이지네이션을 위해)
+        const countQuery = baseQuery.replace(
+            /SELECT[\s\S]*?FROM/i,
+            'SELECT COUNT(*) as total FROM'
+        );
+        const countResult = await pool.query(countQuery, queryParams);
+        const totalPosts = parseInt(countResult.rows[0].total, 10);
+        const totalPages = Math.ceil(totalPosts / limitNum);
+
+        // 페이지네이션 적용 (LIMIT, OFFSET)
+        baseQuery += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+        queryParams.push(limitNum, offset);
+
         const filteredPosts = await pool.query(baseQuery, queryParams);
-        res.json(filteredPosts.rows);
+        
+        // 페이지네이션 정보와 함께 응답
+        res.json({
+            posts: filteredPosts.rows,
+            pagination: {
+                currentPage: pageNum,
+                totalPages: totalPages,
+                totalPosts: totalPosts,
+                limit: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1
+            }
+        });
 
     } catch (err) {
         console.error(err.message);

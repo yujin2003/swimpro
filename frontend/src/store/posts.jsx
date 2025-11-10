@@ -21,21 +21,36 @@ export function PostsProvider({ children }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState(null); // 페이지네이션 정보 저장
 
   // 공통: 게시글 ID 정규화
   const getPostId = (p) => (p?.post_id ?? p?.id);
 
   // API에서 게시글 목록 로드 (useCallback으로 안정적인 참조 유지)
-  const loadPosts = useCallback(async (search = '') => {
+  const loadPosts = useCallback(async (search = '', page = 1, limit = 10) => {
     setLoading(true);
     setError(null);
     try {
-      const apiPosts = await postsAPI.getAllPosts(search);
-      console.log('📋 API에서 받은 게시글들:', apiPosts);
-      console.log('📋 검색어:', search || '없음');
-      console.log('📋 첫 번째 게시글 ID:', apiPosts[0]?.id, '타입:', typeof apiPosts[0]?.id);
-      // 한 번에 업데이트하여 리렌더링 최소화
-      setPosts(apiPosts);
+      const response = await postsAPI.getAllPosts(search, page, limit);
+      
+      // 응답이 객체인 경우 (페이지네이션 정보 포함)
+      if (response && typeof response === 'object' && response.posts) {
+        console.log('📋 API에서 받은 게시글들:', response.posts);
+        console.log('📋 페이지네이션 정보:', response.pagination);
+        console.log('📋 검색어:', search || '없음');
+        console.log('📋 첫 번째 게시글 ID:', response.posts[0]?.id, '타입:', typeof response.posts[0]?.id);
+        // 한 번에 업데이트하여 리렌더링 최소화
+        setPosts(response.posts);
+        // 페이지네이션 정보 저장
+        setPagination(response.pagination);
+        return response.pagination;
+      } else {
+        // 하위 호환성: 배열로 응답이 오는 경우
+        console.log('📋 API에서 받은 게시글들 (배열):', response);
+        console.log('📋 검색어:', search || '없음');
+        setPosts(Array.isArray(response) ? response : []);
+        return null;
+      }
     } catch (err) {
       console.error('게시글 로드 실패:', err);
       
@@ -76,9 +91,9 @@ export function PostsProvider({ children }) {
     }
   }, []); // 의존성 배열 비움 - 함수는 안정적이어야 함
 
-  // 컴포넌트 마운트 시 게시글 로드
+  // 컴포넌트 마운트 시 게시글 로드 (첫 페이지)
   useEffect(() => {
-    loadPosts();
+    loadPosts('', 1, 10);
   }, []);
 
   // 로컬 스토리지 동기화 (API 실패 시 백업용)
@@ -161,13 +176,14 @@ export function PostsProvider({ children }) {
   const value = useMemo(() => ({ 
     posts, 
     loading, 
-    error, 
+    error,
+    pagination, 
     updatePost, 
     addPost, 
     removePost, 
     syncPostFormData,
     loadPosts 
-  }), [posts, loading, error, loadPosts]);
+  }), [posts, loading, error, pagination, loadPosts]);
   return <PostsCtx.Provider value={value}>{children}</PostsCtx.Provider>;
 }
 

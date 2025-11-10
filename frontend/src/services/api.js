@@ -169,9 +169,15 @@ async function apiRequest(endpoint, options = {}) {
 
 // 게시글 관련 API
 export const postsAPI = {
-  // 모든 게시글 조회 (검색어 옵션)
-  getAllPosts: (search = '') => {
-    const url = search ? `/api/posts?search=${encodeURIComponent(search)}` : '/api/posts';
+  // 모든 게시글 조회 (검색어 및 페이지네이션 옵션)
+  getAllPosts: (search = '', page = 1, limit = 10) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (page > 1) params.append('page', page.toString());
+    if (limit !== 10) params.append('limit', limit.toString());
+    
+    const queryString = params.toString();
+    const url = queryString ? `/api/posts?${queryString}` : '/api/posts';
     return apiRequest(url);
   },
   
