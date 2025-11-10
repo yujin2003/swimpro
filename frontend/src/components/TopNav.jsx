@@ -102,29 +102,29 @@ export default function TopNav() {
   }, []);
 
   return (
-    <header className="border-b" style={{ position: 'relative', zIndex: 1000, isolation: 'isolate' }}>
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4" style={{ position: 'relative', zIndex: 1001 }}>
-        <ul className="flex items-center gap-8 text-[17px] font-medium" style={{ position: 'relative', zIndex: 1002 }}>
+    <header className="relative" style={{ position: 'relative', zIndex: 1000, isolation: 'isolate' }}>
+      <nav className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-4" style={{ position: 'relative', zIndex: 1001 }}>
+        <ul className="flex items-center gap-8 text-[22px] font-medium text-white" style={{ position: 'relative', zIndex: 1002, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="hover:text-indigo-700" 
+              className="text-white hover:opacity-80 transition-opacity" 
               to="/about"
               onClick={(e) => {
                 console.log('🔘 About 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11 }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
             >
               About
             </Link>
           </li>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="hover:text-indigo-700" 
+              className="text-white hover:opacity-80 transition-opacity" 
               to="/routine"
               onClick={(e) => {
                 console.log('🔘 Routine 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11 }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
             >
               Routine
             </Link>
@@ -156,18 +156,19 @@ export default function TopNav() {
               onMouseLeave={() => {
                 console.log('🖱️ 멘토링 버튼에서 마우스 나감');
               }}
-              className="hover:text-indigo-700 relative inline-block bg-transparent border-none cursor-pointer text-[17px] font-medium p-0 m-0"
+              className="text-white hover:opacity-80 transition-opacity relative inline-block bg-transparent border-none cursor-pointer text-[22px] font-medium p-0 m-0"
               style={{ 
                 pointerEvents: 'auto', 
                 cursor: 'pointer',
                 textDecoration: 'none',
                 display: 'inline-block',
                 fontFamily: 'inherit',
-                color: 'inherit',
+                color: 'white',
                 outline: 'none',
                 position: 'relative',
                 zIndex: 1001,
-                userSelect: 'none'
+                userSelect: 'none',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)'
               }}
               aria-label="멘토링 페이지로 이동"
               type="button"
@@ -186,12 +187,12 @@ export default function TopNav() {
           </li>
           <li style={{ position: 'relative', zIndex: 10 }}>
             <Link 
-              className="hover:text-indigo-700" 
+              className="text-white hover:opacity-80 transition-opacity" 
               to="/record"
               onClick={(e) => {
                 console.log('🔘 Record 링크 클릭');
               }}
-              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11 }}
+              style={{ pointerEvents: 'auto', cursor: 'pointer', position: 'relative', zIndex: 11, textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
             >
               Record
             </Link>
@@ -199,9 +200,10 @@ export default function TopNav() {
           <li className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsEtcOpen(!isEtcOpen)}
-              className="hover:text-indigo-700 flex items-center gap-1"
+              className="text-white hover:opacity-80 transition-opacity flex items-center gap-1"
+              style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
             >
-              Etc
+              etc
               <svg className={`w-4 h-4 transition-transform ${isEtcOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -233,10 +235,11 @@ export default function TopNav() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-xl">
               {user.avatar}
             </div>
-            <span className="text-sm font-medium">{user.name || user.username}</span>
+            <span className="text-sm font-medium text-white" style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}>{user.name || user.username}</span>
             <button
               onClick={logout}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-white hover:opacity-80 transition-opacity"
+              style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)' }}
             >
               Logout
             </button>
@@ -244,16 +247,16 @@ export default function TopNav() {
         ) : (
           <div className="flex items-center gap-3">
             <Link
-              to="/signin"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
               to="/signup"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+              className="rounded-lg bg-gray-800 px-5 py-2.5 text-base font-medium text-white hover:bg-gray-700 transition-colors"
             >
               Sign Up
+            </Link>
+            <Link
+              to="/signin"
+              className="rounded-lg bg-indigo-500 px-5 py-2.5 text-base font-medium text-white hover:bg-indigo-600 transition-colors"
+            >
+              Sign In
             </Link>
           </div>
         )}

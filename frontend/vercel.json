@@ -1,8 +1,13 @@
 {
+  "version": 2,
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://swimpro.onrender.com /api/$1"
     }
   ]
 }

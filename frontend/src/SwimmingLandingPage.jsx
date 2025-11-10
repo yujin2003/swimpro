@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 // 1. TopNav 컴포넌트를 import 합니다.
 import TopNav from "./components/TopNav";
 
@@ -43,18 +42,20 @@ export default function SwimmingLandingPage() {
         </motion.p>
 
         <div className="flex gap-4">
-          <Link
-            to="/routine"
-            className="rounded-full bg-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-indigo-700 active:translate-y-px"
+          <button
+            onClick={(e) => e.preventDefault()}
+            className="rounded-full bg-indigo-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-indigo-700 active:translate-y-px cursor-default"
+            style={{ pointerEvents: 'auto' }}
           >
             Get Started
-          </Link>
-          <Link
-            to="/signup"
-            className="rounded-full border-2 border-white px-8 py-3 font-semibold text-white transition hover:bg-white hover:text-indigo-600"
+          </button>
+          <button
+            onClick={(e) => e.preventDefault()}
+            className="rounded-full border-2 border-white px-8 py-3 font-semibold text-white transition hover:bg-white hover:text-indigo-600 cursor-default"
+            style={{ pointerEvents: 'auto' }}
           >
             Learn More
-          </Link>
+          </button>
         </div>
       </div>
     </div>
