@@ -318,7 +318,7 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
             // metadata가 없는 경우 최신 게시글 3개 반환
             const fallbackQuery = `
                 SELECT 
-                    post_id, title, metadata, event_datetime, created_at,
+                    post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
                     (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
                 FROM posts p
                 WHERE post_id != $1
@@ -346,7 +346,7 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         // 글 찾기
         const query = `
             SELECT 
-                post_id, title, metadata, event_datetime, created_at,
+                post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
                 (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
             FROM posts p
             WHERE metadata->>'user_type' = $1  
@@ -363,7 +363,7 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         if (recommendedPosts.rows.length === 0) {
             const fallbackQuery = `
                 SELECT 
-                    post_id, title, metadata, event_datetime, created_at,
+                    post_id, title, metadata, event_datetime, event_end_datetime, created_at, user_id,
                     (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
                 FROM posts p
                 WHERE post_id != $1

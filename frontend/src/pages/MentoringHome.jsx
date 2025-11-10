@@ -347,7 +347,17 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
           <p className="mb-3 text-sm text-gray-600">작성하신 게시글과 매칭되는 추천 게시글입니다.</p>
           <div className="space-y-2">
             {recommendedPosts.map((post, index) => {
-              const postId = post.id || post.post_id;
+              const postId = post.post_id || post.id;
+              
+              // 디버깅: 추천 게시글 데이터 확인
+              if (index === 0) {
+                console.log('🔍 추천 게시글 데이터 확인:', {
+                  post,
+                  postId,
+                  'post.post_id': post.post_id,
+                  'post.id': post.id
+                });
+              }
               
               // 메인 게시글 목록에서 같은 ID의 게시글을 찾아서 동일한 데이터 사용
               const mainPost = posts.find(p => {
@@ -358,6 +368,11 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
               // 메인 게시글이 있으면 메인 게시글 데이터 사용, 없으면 추천 게시글 데이터 사용
               const displayPost = mainPost || post;
               const postTitle = displayPost.title || '제목 없음';
+              
+              // postId 검증
+              if (!postId) {
+                console.error('❌ 추천 게시글에 ID가 없습니다:', post);
+              }
               
                     // 날짜/시간 포맷팅 (메인 게시글 목록과 완전히 동일한 로직)
                     let displayTime = '';
@@ -534,6 +549,20 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                 <Link
                   key={postId || `recommended-${index}`}
                   to={postId ? `/mentoring/${postId}` : '#'}
+                  onClick={(e) => {
+                    if (!postId) {
+                      e.preventDefault();
+                      console.error('❌ 추천 게시글 클릭: ID가 없습니다', post);
+                      alert('게시글 ID가 없습니다.');
+                    } else {
+                      console.log('🔘 추천 게시글 클릭:', {
+                        postId,
+                        title: postTitle,
+                        'post.post_id': post.post_id,
+                        'post.id': post.id
+                      });
+                    }
+                  }}
                   className={[
                     "flex items-center gap-3 rounded-lg p-3 transition-colors",
                     index % 2 === 0
@@ -604,7 +633,17 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                 <h2 className="mb-3 text-lg font-bold text-blue-600">추천 게시글</h2>
                 <div className="space-y-2">
                   {bestPosts.map((post, index) => {
-                    const postId = post.id || post.post_id;
+                    const postId = post.post_id || post.id;
+                    
+                    // 디버깅: 베스트 게시글 데이터 확인
+                    if (index === 0) {
+                      console.log('🔍 베스트 게시글 데이터 확인:', {
+                        post,
+                        postId,
+                        'post.post_id': post.post_id,
+                        'post.id': post.id
+                      });
+                    }
                     
                     // 메인 게시글 목록에서 같은 ID의 게시글을 찾아서 동일한 데이터 사용
                     const mainPost = posts.find(p => {
@@ -615,6 +654,11 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                     // 메인 게시글이 있으면 메인 게시글 데이터 사용, 없으면 추천 게시글 데이터 사용
                     const displayPost = mainPost || post;
                     const postTitle = displayPost.title || '제목 없음';
+                    
+                    // postId 검증
+                    if (!postId) {
+                      console.error('❌ 베스트 게시글에 ID가 없습니다:', post);
+                    }
                     
                     // 날짜/시간 포맷팅 (메인 게시글 목록과 완전히 동일한 로직)
                     let displayTime = '';
@@ -791,6 +835,20 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
                       <Link
                         key={postId || `best-${index}`}
                         to={postId ? `/mentoring/${postId}` : '#'}
+                        onClick={(e) => {
+                          if (!postId) {
+                            e.preventDefault();
+                            console.error('❌ 베스트 게시글 클릭: ID가 없습니다', post);
+                            alert('게시글 ID가 없습니다.');
+                          } else {
+                            console.log('🔘 베스트 게시글 클릭:', {
+                              postId,
+                              title: postTitle,
+                              'post.post_id': post.post_id,
+                              'post.id': post.id
+                            });
+                          }
+                        }}
                         className={[
                           "flex items-center gap-3 rounded-lg p-3 transition-colors",
                           index % 2 === 0
