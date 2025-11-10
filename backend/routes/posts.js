@@ -136,18 +136,22 @@ router.get("/", async (req, res) => {
             baseQuery += " WHERE " + whereClauses.join(" AND ");
         }
 
-        baseQuery += " ORDER BY posts.created_at DESC";
-
-        // 전체 게시글 수 조회 (페이지네이션을 위해)
-        const countQuery = baseQuery.replace(
-            /SELECT[\s\S]*?FROM/i,
-            'SELECT COUNT(*) as total FROM'
-        );
+        // 전체 게시글 수 조회 (페이지네이션을 위해) - COUNT 쿼리는 별도로 작성
+        let countQuery = 
+            `SELECT COUNT(*) as total 
+             FROM posts 
+             JOIN users ON posts.user_id = users.user_id`;
+        
+        if (whereClauses.length > 0) {
+            countQuery += " WHERE " + whereClauses.join(" AND ");
+        }
+        
         const countResult = await pool.query(countQuery, queryParams);
         const totalPosts = parseInt(countResult.rows[0].total, 10);
         const totalPages = Math.ceil(totalPosts / limitNum);
 
-        // 페이지네이션 적용 (LIMIT, OFFSET)
+        // 정렬 및 페이지네이션 적용
+        baseQuery += " ORDER BY posts.created_at DESC";
         baseQuery += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
         queryParams.push(limitNum, offset);
 
