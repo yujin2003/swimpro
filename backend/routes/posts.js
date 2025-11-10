@@ -302,7 +302,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     }
 });
 
-// 추천 게시글 조회
+// 추천 게시글 조회 (인증 필요)
 router.get("/:id/recommend", authMiddleware, async (req, res) => {
     try {
         const { id } = req.params; // 기준이 되는 게시글 ID
@@ -314,6 +314,21 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         }
         
         const metadata = basePost.rows[0].metadata;
+        if (!metadata) {
+            // metadata가 없는 경우 최신 게시글 3개 반환
+            const fallbackQuery = `
+                SELECT 
+                    post_id, title, metadata, event_datetime, created_at,
+                    (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
+                FROM posts p
+                WHERE post_id != $1
+                ORDER BY created_at DESC
+                LIMIT 3
+            `;
+            const fallbackPosts = await pool.query(fallbackQuery, [id]);
+            return res.json(fallbackPosts.rows);
+        }
+        
         const baseRole = metadata.role;         // ex 멘티
         const baseUserType = metadata.user_type; // ex C형(초보 입문형)
         const baseEvent = metadata.event;       // ex 자유형
@@ -343,6 +358,22 @@ router.get("/:id/recommend", authMiddleware, async (req, res) => {
         `;
         
         const recommendedPosts = await pool.query(query, [baseUserType, baseEvent, targetRole, id]);
+        
+        // 추천 게시글이 없으면 최신 게시글 3개 반환
+        if (recommendedPosts.rows.length === 0) {
+            const fallbackQuery = `
+                SELECT 
+                    post_id, title, metadata, event_datetime, created_at,
+                    (SELECT username FROM users u WHERE u.user_id = p.user_id) as username 
+                FROM posts p
+                WHERE post_id != $1
+                ORDER BY created_at DESC
+                LIMIT 3
+            `;
+            const fallbackPosts = await pool.query(fallbackQuery, [id]);
+            return res.json(fallbackPosts.rows);
+        }
+        
         res.json(recommendedPosts.rows);
 
     } catch (err) {

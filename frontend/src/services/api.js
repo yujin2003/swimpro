@@ -28,16 +28,17 @@ async function apiRequest(endpoint, options = {}) {
   // 인증 토큰이 있으면 헤더에 추가
   const token = getAuthToken();
   
-  // 디버깅: 메시지 관련 API 호출 시 토큰 확인
-  if (endpoint?.includes('/messages')) {
+  // 디버깅: 메시지 및 추천 게시글 관련 API 호출 시 토큰 확인
+  if (endpoint?.includes('/messages') || endpoint?.includes('/recommend')) {
     const sessionToken = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
     const localToken = localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
-    console.log('🔐 API 토큰 확인 (메시지 API):', {
+    console.log('🔐 API 토큰 확인:', {
       endpoint,
       sessionToken: sessionToken ? sessionToken.substring(0, 20) + '...' : '없음',
       localToken: localToken ? localToken.substring(0, 20) + '...' : '없음',
       usingToken: token ? token.substring(0, 20) + '...' : '없음',
-      source: sessionToken ? 'sessionStorage' : (localToken ? 'localStorage' : '없음')
+      source: sessionToken ? 'sessionStorage' : (localToken ? 'localStorage' : '없음'),
+      hasToken: !!token
     });
   }
   const headers = {
