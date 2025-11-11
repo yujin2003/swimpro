@@ -629,7 +629,7 @@ export default function SwimmingSuppliesPage() {
                     <div className="h-1 w-full bg-gray-200"></div>
                     
                     {/* 상품 이미지 영역 */}
-                    <div className="relative w-full h-60 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                    <div className="relative w-full h-80 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                       {/* 배경 장식 */}
                       <div className="absolute inset-0 opacity-5">
                         <div className={`absolute top-4 right-4 w-32 h-32 rounded-full ${
@@ -647,7 +647,8 @@ export default function SwimmingSuppliesPage() {
                       <img
                         src={product.image || '/swimming-cap.jpg'}
                         alt={product.name}
-                        className="relative z-10 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="relative z-10 w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+                        style={{ mixBlendMode: 'darken' }}
                         onError={(e) => {
                           console.error('❌ 이미지 로드 실패:', product.name, '원본 경로:', product.image, '대체 이미지로 변경');
                           if (e.target.src !== window.location.origin + '/swimming-cap.jpg') {
@@ -730,11 +731,12 @@ export default function SwimmingSuppliesPage() {
             ) : selected ? (
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* Product Image */}
-              <div className="space-y-4">
+              <div className="flex items-center justify-center bg-gray-50 rounded-xl" style={{ minHeight: '32rem' }}>
                 <img
                   src={selected.image || '/one-piece.jpg'}
                   alt={selected.name}
-                  className="w-full h-96 object-cover rounded-xl"
+                  className="w-full h-full object-contain rounded-xl"
+                  style={{ mixBlendMode: 'darken' }}
                   onError={(e) => {
                     console.error('❌ 모달 이미지 로드 실패:', selected.name, '경로:', selected.image);
                     // 제품 이름에 따라 적절한 이미지 사용
