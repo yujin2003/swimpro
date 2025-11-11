@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { IoExitOutline } from "react-icons/io5";
 import TopNav from "../components/TopNav";
 import { messagesAPI, handleAPIError } from "../services/api.js";
 import { AUTH_CONFIG, API_CONFIG } from "../config/environment.js";
@@ -51,47 +50,8 @@ function formatTime(date = new Date()) {
   return `${h}:${minutes} ${ampm}`;
 }
 
-function LeftMenu({ fetchUnreadCountRef }) {
+function LeftMenu() {
   const { user } = useUser();
-  const [unreadCount, setUnreadCount] = useState(0);
-  
-  // 읽지 않은 메시지 수 가져오기
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await messagesAPI.getUnreadCount();
-      let count = 0;
-      if (typeof response === 'number') {
-        count = response;
-      } else if (response && typeof response === 'object') {
-        count = response.count || response.unreadCount || 0;
-      }
-      setUnreadCount(count);
-    } catch (err) {
-      // 404 오류는 백엔드 서버가 재시작되지 않았을 때 발생 (임시로 무시)
-      if (err.message && err.message.includes('404')) {
-        console.warn('⚠️ 읽지 않은 메시지 수 API가 아직 배포되지 않았습니다. 백엔드 서버를 재시작하세요.');
-        setUnreadCount(0);
-      } else {
-        console.error('❌ 읽지 않은 메시지 수 조회 실패:', err);
-        setUnreadCount(0);
-      }
-    }
-  };
-  
-  // ref에 함수 할당
-  useEffect(() => {
-    if (fetchUnreadCountRef) {
-      fetchUnreadCountRef.current = fetchUnreadCount;
-    }
-  }, [fetchUnreadCountRef]);
-  
-  useEffect(() => {
-    fetchUnreadCount();
-    // 주기적으로 업데이트 (10초마다 - 더 빠른 업데이트)
-    const interval = setInterval(fetchUnreadCount, 10000);
-    
-    return () => clearInterval(interval);
-  }, []);
   
   return (
     <aside className="rounded-2xl bg-white/90 p-6 shadow flex flex-col h-full" style={{ position: 'relative', zIndex: 100 }}>
@@ -107,7 +67,7 @@ function LeftMenu({ fetchUnreadCountRef }) {
 
       <nav className="space-y-2 flex-1">
         <SideItem icon={<HomeIcon />} label="Home" to="/" />
-        <SideItem icon={<BellIcon />} label="DM" to="/chat" unreadCount={unreadCount} />
+        <SideItem icon={<MessageIcon />} label="DM" to="/chat" />
       </nav>
 
       <div className="border-t pt-4 mt-auto">
@@ -120,7 +80,7 @@ function LeftMenu({ fetchUnreadCountRef }) {
   );
 }
 
-function SideItem({ icon, label, to, unreadCount = 0 }) {
+function SideItem({ icon, label, to }) {
   const navigate = useNavigate();
   
   const handleClick = (e) => {
@@ -145,7 +105,7 @@ function SideItem({ icon, label, to, unreadCount = 0 }) {
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100 relative"
+      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100"
       onClick={handleClick}
       style={{
         pointerEvents: 'auto',
@@ -154,24 +114,8 @@ function SideItem({ icon, label, to, unreadCount = 0 }) {
         position: 'relative'
       }}
     >
-      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600 relative">
+      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600">
         {icon}
-        {unreadCount > 0 && (
-          <span 
-            className="absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-2 border-white"
-            style={{
-              minWidth: unreadCount > 9 ? '20px' : '18px',
-              height: '18px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              padding: unreadCount > 9 ? '0 5px' : '0 3px',
-              lineHeight: '1',
-              zIndex: 1000
-            }}
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
       </span>
       <span className="text-gray-800">{label}</span>
     </button>
@@ -334,7 +278,6 @@ export default function ChatPage() {
   const wsRef = useRef(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState({}); // 새로운 메시지 카운트
-  const fetchUnreadCountRef = useRef(null); // LeftMenu의 fetchUnreadCount 함수 참조
   
   // selectedUserId가 변경될 때마다 ref 업데이트
   useEffect(() => {
@@ -702,12 +645,6 @@ export default function ChatPage() {
                     ...prev,
                     [userIdStr]: (prev[userIdStr] || 0) + 1
                   }));
-                  // 읽지 않은 메시지 수 업데이트 (LeftMenu의 unreadCount)
-                  if (fetchUnreadCountRef.current) {
-                    setTimeout(() => {
-                      fetchUnreadCountRef.current();
-                    }, 500);
-                  }
                 }
                 
                 return updatedConversations;
@@ -1333,40 +1270,6 @@ export default function ChatPage() {
     }
   }
 
-  // 채팅방 삭제 함수
-  async function handleDeleteConversation() {
-    if (!selectedUserId) return;
-    
-    if (!confirm("이 채팅방을 삭제하시겠습니까? 모든 메시지가 영구적으로 삭제됩니다.")) {
-      return;
-    }
-
-    try {
-      // 백엔드에서 채팅방 삭제
-      await messagesAPI.deleteConversation(selectedUserId);
-      
-      // 프론트엔드 상태에서도 제거
-      setConversations((prev) => {
-        const newConversations = { ...prev };
-        delete newConversations[selectedUserId];
-        return newConversations;
-      });
-      
-      // 선택된 사용자 초기화
-      setSelectedUserId(null);
-      setCurrentMessages([]);
-      
-      // 대화 목록 다시 로드
-      loadConversations();
-      
-      console.log('✅ 채팅방 삭제 완료');
-    } catch (error) {
-      console.error('❌ 채팅방 삭제 실패:', error);
-      handleAPIError(error);
-      alert('채팅방 삭제에 실패했습니다. 다시 시도해주세요.');
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#4b2e9f]">
       <TopNav />
@@ -1375,7 +1278,7 @@ export default function ChatPage() {
           <div className="mt-8 bg-[#4b2e9f] rounded-xl p-6">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-4">
-                <LeftMenu fetchUnreadCountRef={fetchUnreadCountRef} />
+                <LeftMenu />
               </div>
 
               <div className="col-span-3">
@@ -1404,13 +1307,6 @@ export default function ChatPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`} title={wsConnected ? '연결됨' : '연결 안됨'}></div>
-                        <button 
-                          className="text-slate-500 hover:text-red-600 transition-colors p-1"
-                          onClick={handleDeleteConversation}
-                          title="채팅방 삭제"
-                        >
-                          <IoExitOutline className="w-5 h-5" />
-                        </button>
                         <button className="text-sm text-slate-500 hover:text-slate-700" onClick={clearChat}>지우기</button>
                       <div className="text-slate-400">⋮</div>
                     </div>

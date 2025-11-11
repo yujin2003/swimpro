@@ -3,8 +3,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { usePosts } from "../store/posts.jsx";
 import { useUser } from "../store/user.jsx";
 import TopNav from "../components/TopNav";
-import { postsAPI, messagesAPI } from "../services/api.js";
-import { AUTH_CONFIG, API_CONFIG } from "../config/environment.js";
+import { postsAPI } from "../services/api.js";
 
 export default function MentoringHome() {
   const { posts, loading, error, loadPosts, pagination } = usePosts();
@@ -1347,97 +1346,6 @@ function LeftList({ posts, q, setQ, bestPosts, bestPostsLoading, recommendedPost
 
 function RightPanel() {
   const { user, logout, isLoggedIn } = useUser();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const wsRef = useRef(null);
-  
-  // 읽지 않은 메시지 수 가져오기
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await messagesAPI.getUnreadCount();
-      let count = 0;
-      if (typeof response === 'number') {
-        count = response;
-      } else if (response && typeof response === 'object') {
-        count = response.count || response.unreadCount || 0;
-      }
-      setUnreadCount(count);
-    } catch (err) {
-      // 404 오류는 백엔드 서버가 재시작되지 않았을 때 발생 (임시로 무시)
-      if (err.message && err.message.includes('404')) {
-        console.warn('⚠️ 읽지 않은 메시지 수 API가 아직 배포되지 않았습니다. 백엔드 서버를 재시작하세요.');
-        setUnreadCount(0);
-      } else {
-        console.error('❌ 읽지 않은 메시지 수 조회 실패:', err);
-        setUnreadCount(0);
-      }
-    }
-  };
-  
-  // WebSocket 연결하여 실시간으로 읽지 않은 메시지 수 업데이트
-  useEffect(() => {
-    // 초기 로드
-    fetchUnreadCount();
-    
-    // WebSocket 연결
-    const token = sessionStorage.getItem(AUTH_CONFIG.TOKEN_KEY) || localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
-    if (!token) return;
-    
-    const wsUrl = API_CONFIG.BASE_URL.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:') + '/';
-    
-    try {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-      
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'auth', token: token }));
-      };
-      
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          // 새 메시지가 오면 읽지 않은 메시지 수 업데이트
-          if ((data.type === 'new_dm' || data.type === 'dm_sent') && data.message) {
-            const message = data.message;
-            const currentUserId = user?.id || user?.userId;
-            const receiverId = message.receiver_id || message.receiverId;
-            
-            // 내가 받은 메시지인 경우에만 카운트 증가
-            if (receiverId && String(receiverId) === String(currentUserId)) {
-              setTimeout(() => fetchUnreadCount(), 500); // 약간의 지연 후 업데이트
-            }
-          }
-        } catch (err) {
-          console.error('WebSocket 메시지 파싱 실패:', err);
-        }
-      };
-      
-      ws.onerror = (error) => {
-        // WebSocket 연결 실패는 무시 (선택적 기능)
-        console.warn('⚠️ WebSocket 연결 실패 (읽지 않은 메시지 실시간 업데이트 불가):', error);
-      };
-      
-      ws.onclose = () => {
-        // 재연결 시도
-        setTimeout(() => {
-          if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-            // 재연결 로직은 생략 (필요시 추가)
-          }
-        }, 5000);
-      };
-    } catch (err) {
-      console.error('WebSocket 연결 실패:', err);
-    }
-    
-    // 주기적으로 업데이트 (10초마다 - 더 빠른 업데이트)
-    const interval = setInterval(fetchUnreadCount, 10000);
-    
-    return () => {
-      clearInterval(interval);
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [user]);
   
   return (
     <aside className="rounded-2xl bg-white/90 p-6 shadow flex flex-col h-full" style={{ position: 'relative', zIndex: 100 }}>
@@ -1453,7 +1361,7 @@ function RightPanel() {
 
       <nav className="space-y-2 flex-1">
         <SideItem icon={<HomeIcon />} label="Home" to="/" />
-        <SideItem icon={<BellIcon />} label="DM" to="/chat" unreadCount={unreadCount} />
+        <SideItem icon={<MessageIcon />} label="DM" to="/chat" />
       </nav>
 
       <div className="border-t pt-4 mt-auto">
@@ -1466,7 +1374,7 @@ function RightPanel() {
   );
 }
 
-function SideItem({ icon, label, to, unreadCount = 0 }) {
+function SideItem({ icon, label, to }) {
   const navigate = useNavigate();
   
   const handleClick = (e) => {
@@ -1491,7 +1399,7 @@ function SideItem({ icon, label, to, unreadCount = 0 }) {
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100 relative"
+      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100"
       onClick={handleClick}
       style={{
         pointerEvents: 'auto',
@@ -1500,24 +1408,8 @@ function SideItem({ icon, label, to, unreadCount = 0 }) {
         position: 'relative'
       }}
     >
-      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600 relative">
+      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600">
         {icon}
-        {unreadCount > 0 && (
-          <span 
-            className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-2 border-white"
-            style={{
-              minWidth: unreadCount > 9 ? '20px' : '18px',
-              height: '18px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              padding: unreadCount > 9 ? '0 5px' : '0 3px',
-              lineHeight: '1',
-              zIndex: 1000
-            }}
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
       </span>
       <span className="text-gray-800">{label}</span>
     </button>
