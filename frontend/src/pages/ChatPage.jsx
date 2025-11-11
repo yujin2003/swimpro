@@ -50,8 +50,47 @@ function formatTime(date = new Date()) {
   return `${h}:${minutes} ${ampm}`;
 }
 
-function LeftMenu() {
+function LeftMenu({ fetchUnreadCountRef }) {
   const { user } = useUser();
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // 읽지 않은 메시지 수 가져오기
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await messagesAPI.getUnreadCount();
+      let count = 0;
+      if (typeof response === 'number') {
+        count = response;
+      } else if (response && typeof response === 'object') {
+        count = response.count || response.unreadCount || 0;
+      }
+      setUnreadCount(count);
+    } catch (err) {
+      // 404 오류는 백엔드 서버가 재시작되지 않았을 때 발생 (임시로 무시)
+      if (err.message && err.message.includes('404')) {
+        console.warn('⚠️ 읽지 않은 메시지 수 API가 아직 배포되지 않았습니다. 백엔드 서버를 재시작하세요.');
+        setUnreadCount(0);
+      } else {
+        console.error('❌ 읽지 않은 메시지 수 조회 실패:', err);
+        setUnreadCount(0);
+      }
+    }
+  };
+  
+  // ref에 함수 할당
+  useEffect(() => {
+    if (fetchUnreadCountRef) {
+      fetchUnreadCountRef.current = fetchUnreadCount;
+    }
+  }, [fetchUnreadCountRef]);
+  
+  useEffect(() => {
+    fetchUnreadCount();
+    // 주기적으로 업데이트 (10초마다 - 더 빠른 업데이트)
+    const interval = setInterval(fetchUnreadCount, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <aside className="rounded-2xl bg-white/90 p-6 shadow flex flex-col h-full" style={{ position: 'relative', zIndex: 100 }}>
@@ -67,7 +106,7 @@ function LeftMenu() {
 
       <nav className="space-y-2 flex-1">
         <SideItem icon={<HomeIcon />} label="Home" to="/" />
-        <SideItem icon={<MessageIcon />} label="DM" to="/chat" />
+        <SideItem icon={<BellIcon />} label="DM" to="/chat" unreadCount={unreadCount} />
       </nav>
 
       <div className="border-t pt-4 mt-auto">
@@ -80,7 +119,7 @@ function LeftMenu() {
   );
 }
 
-function SideItem({ icon, label, to }) {
+function SideItem({ icon, label, to, unreadCount = 0 }) {
   const navigate = useNavigate();
   
   const handleClick = (e) => {
@@ -105,7 +144,7 @@ function SideItem({ icon, label, to }) {
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100"
+      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-[15px] hover:bg-gray-100 relative"
       onClick={handleClick}
       style={{
         pointerEvents: 'auto',
@@ -114,8 +153,24 @@ function SideItem({ icon, label, to }) {
         position: 'relative'
       }}
     >
-      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600">
+      <span className="inline-flex h-5 w-5 items-center justify-center text-gray-600 relative">
         {icon}
+        {unreadCount > 0 && (
+          <span 
+            className="absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg border-2 border-white"
+            style={{
+              minWidth: unreadCount > 9 ? '20px' : '18px',
+              height: '18px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              padding: unreadCount > 9 ? '0 5px' : '0 3px',
+              lineHeight: '1',
+              zIndex: 1000
+            }}
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </span>
       <span className="text-gray-800">{label}</span>
     </button>
@@ -278,6 +333,7 @@ export default function ChatPage() {
   const wsRef = useRef(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState({}); // 새로운 메시지 카운트
+  const fetchUnreadCountRef = useRef(null); // LeftMenu의 fetchUnreadCount 함수 참조
   
   // selectedUserId가 변경될 때마다 ref 업데이트
   useEffect(() => {
@@ -645,6 +701,12 @@ export default function ChatPage() {
                     ...prev,
                     [userIdStr]: (prev[userIdStr] || 0) + 1
                   }));
+                  // 읽지 않은 메시지 수 업데이트 (LeftMenu의 unreadCount)
+                  if (fetchUnreadCountRef.current) {
+                    setTimeout(() => {
+                      fetchUnreadCountRef.current();
+                    }, 500);
+                  }
                 }
                 
                 return updatedConversations;
@@ -1278,7 +1340,7 @@ export default function ChatPage() {
           <div className="mt-8 bg-[#4b2e9f] rounded-xl p-6">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-4">
-                <LeftMenu />
+                <LeftMenu fetchUnreadCountRef={fetchUnreadCountRef} />
               </div>
 
               <div className="col-span-3">

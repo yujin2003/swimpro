@@ -64,4 +64,29 @@ router.get("/conversations", authMiddleware, async (req, res) => {
         res.status(500).send("서버 에러");
     }
 });
+
+// 4. 읽지 않은 메시지 수 조회
+router.get("/unread-count", authMiddleware, async (req, res) => {
+    try {
+        const myUserId = req.user.userId;
+
+        // 내가 받은 메시지 중 read=false, read IS NULL, 또는 read = 0인 메시지 수
+        // read 컬럼이 boolean 또는 integer일 수 있으므로 여러 경우를 고려
+        const unreadCount = await pool.query(
+            `SELECT COUNT(*) as count
+             FROM direct_messages
+             WHERE receiver_id = $1 AND (read = false OR read IS NULL OR read = 0 OR read = 'false')`,
+            [myUserId]
+        );
+
+        const count = parseInt(unreadCount.rows[0].count, 10);
+        console.log(`📬 사용자 ${myUserId}의 읽지 않은 메시지 수: ${count}`);
+        res.json({ count: count });
+    } catch (err) {
+        console.error('❌ 읽지 않은 메시지 수 조회 실패:', err.message);
+        console.error('❌ 에러 상세:', err);
+        res.status(500).json({ error: "서버 에러", message: err.message });
+    }
+});
+
 export default router;

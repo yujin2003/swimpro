@@ -264,6 +264,9 @@ export const messagesAPI = {
     method: 'POST',
     body: JSON.stringify(messageData),
   }),
+  
+  // 읽지 않은 메시지 수 조회 (내가 받은 메시지 중 read=false인 것)
+  getUnreadCount: () => apiRequest('/api/messages/unread-count'),
 };
 
 // 수영 기록 관련 API
