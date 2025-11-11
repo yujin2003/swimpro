@@ -70,12 +70,13 @@ router.get("/unread-count", authMiddleware, async (req, res) => {
     try {
         const myUserId = req.user.userId;
 
-        // 내가 받은 메시지 중 read=false, read IS NULL, 또는 read = 0인 메시지 수
-        // read 컬럼이 boolean 또는 integer일 수 있으므로 여러 경우를 고려
+        // 내가 받은 메시지 중 읽지 않은 메시지 수
+        // read 컬럼이 boolean이면 false 또는 NULL
+        // 가장 안전한 방법: read IS NULL OR read = false
         const unreadCount = await pool.query(
             `SELECT COUNT(*) as count
              FROM direct_messages
-             WHERE receiver_id = $1 AND (read = false OR read IS NULL OR read = 0 OR read = 'false')`,
+             WHERE receiver_id = $1 AND (read IS NULL OR read = false)`,
             [myUserId]
         );
 
@@ -84,6 +85,30 @@ router.get("/unread-count", authMiddleware, async (req, res) => {
         res.json({ count: count });
     } catch (err) {
         console.error('❌ 읽지 않은 메시지 수 조회 실패:', err.message);
+        console.error('❌ 에러 상세:', err);
+        console.error('❌ 에러 스택:', err.stack);
+        res.status(500).json({ error: "서버 에러", message: err.message });
+    }
+});
+
+// 5. 특정 사용자와의 채팅방 삭제 (양방향 메시지 모두 삭제)
+router.delete("/conversation/:otherUserId", authMiddleware, async (req, res) => {
+    try {
+        const myUserId = req.user.userId;
+        const { otherUserId } = req.params;
+
+        // 내가 보낸 메시지와 받은 메시지 모두 삭제
+        await pool.query(
+            `DELETE FROM direct_messages 
+             WHERE (sender_id = $1 AND receiver_id = $2) 
+                OR (sender_id = $2 AND receiver_id = $1)`,
+            [myUserId, otherUserId]
+        );
+
+        console.log(`🗑️ 사용자 ${myUserId}가 ${otherUserId}와의 채팅방을 삭제했습니다.`);
+        res.json({ message: "채팅방이 삭제되었습니다." });
+    } catch (err) {
+        console.error('❌ 채팅방 삭제 실패:', err.message);
         console.error('❌ 에러 상세:', err);
         res.status(500).json({ error: "서버 에러", message: err.message });
     }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { IoExitOutline } from "react-icons/io5";
 import TopNav from "../components/TopNav";
 import { messagesAPI, handleAPIError } from "../services/api.js";
 import { AUTH_CONFIG, API_CONFIG } from "../config/environment.js";
@@ -1332,6 +1333,40 @@ export default function ChatPage() {
     }
   }
 
+  // 채팅방 삭제 함수
+  async function handleDeleteConversation() {
+    if (!selectedUserId) return;
+    
+    if (!confirm("이 채팅방을 삭제하시겠습니까? 모든 메시지가 영구적으로 삭제됩니다.")) {
+      return;
+    }
+
+    try {
+      // 백엔드에서 채팅방 삭제
+      await messagesAPI.deleteConversation(selectedUserId);
+      
+      // 프론트엔드 상태에서도 제거
+      setConversations((prev) => {
+        const newConversations = { ...prev };
+        delete newConversations[selectedUserId];
+        return newConversations;
+      });
+      
+      // 선택된 사용자 초기화
+      setSelectedUserId(null);
+      setCurrentMessages([]);
+      
+      // 대화 목록 다시 로드
+      loadConversations();
+      
+      console.log('✅ 채팅방 삭제 완료');
+    } catch (error) {
+      console.error('❌ 채팅방 삭제 실패:', error);
+      handleAPIError(error);
+      alert('채팅방 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#4b2e9f]">
       <TopNav />
@@ -1369,6 +1404,13 @@ export default function ChatPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`} title={wsConnected ? '연결됨' : '연결 안됨'}></div>
+                        <button 
+                          className="text-slate-500 hover:text-red-600 transition-colors p-1"
+                          onClick={handleDeleteConversation}
+                          title="채팅방 삭제"
+                        >
+                          <IoExitOutline className="w-5 h-5" />
+                        </button>
                         <button className="text-sm text-slate-500 hover:text-slate-700" onClick={clearChat}>지우기</button>
                       <div className="text-slate-400">⋮</div>
                     </div>

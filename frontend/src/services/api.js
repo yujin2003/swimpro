@@ -267,6 +267,11 @@ export const messagesAPI = {
   
   // 읽지 않은 메시지 수 조회 (내가 받은 메시지 중 read=false인 것)
   getUnreadCount: () => apiRequest('/api/messages/unread-count'),
+  
+  // 특정 사용자와의 채팅방 삭제
+  deleteConversation: (otherUserId) => apiRequest(`/api/messages/conversation/${otherUserId}`, {
+    method: 'DELETE',
+  }),
 };
 
 // 수영 기록 관련 API
