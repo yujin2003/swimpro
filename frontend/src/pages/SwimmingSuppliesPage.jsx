@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import TopNav from "../components/TopNav";
+import { API_CONFIG } from "../config/environment.js";
 
 // 수영복 종류별 데이터 정의
 const SWIMWEAR_TYPES = {
@@ -206,15 +207,11 @@ const SWIMWEAR_TYPES = {
   ]
 };
 
-// 기본 API URL (백엔드 서버 주소)
-// ngrok 주소 사용 (외부 접근 가능)
-const API_BASE_URL = 'https://yasuko-bulletless-trudi.ngrok-free.dev';
-// 로컬 서버 사용 (ngrok이 실행되지 않은 경우)
-// const API_BASE_URL = 'http://localhost:3001';
+// API_BASE_URL은 environment.js의 API_CONFIG.BASE_URL을 사용
 
 // API 요청 헬퍼 함수 (api.js와 유사한 패턴)
 async function fetchProducts() {
-  const url = `${API_BASE_URL}/api/products`;
+  const url = `${API_CONFIG.BASE_URL}/api/products`;
   
   const headers = {
     'Content-Type': 'application/json',
@@ -283,7 +280,7 @@ async function fetchProducts() {
 
 // 제품 상세 정보 불러오기 API 함수
 async function fetchProductDetail(productId) {
-  const url = `${API_BASE_URL}/api/products/${productId}`;
+  const url = `${API_CONFIG.BASE_URL}/api/products/${productId}`;
   
   const headers = {
     'Content-Type': 'application/json',
